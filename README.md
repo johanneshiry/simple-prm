@@ -1,2 +1,2 @@
 # simple-prm
-A very simple personal relationship management 
+A very simple personal relationship management

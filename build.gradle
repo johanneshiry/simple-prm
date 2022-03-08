@@ -1,0 +1,59 @@
+plugins {
+  id 'java' //java support
+  id 'scala'
+  id 'com.diffplug.spotless' version '6.2.1'
+}
+
+ext {
+  javaVersion = JavaVersion.VERSION_17
+
+  scalaMajorVersion = '3'
+  scalaVersion = '3.1.1'
+  akkaVersion = '2.6.18'
+
+  scriptsLocation = 'gradle' + File.separator + 'scripts' + File.separator
+}
+
+java {
+  toolchain {
+    languageVersion.set(JavaLanguageVersion.of(javaVersion.toString()))
+  }
+}
+
+group = 'com.github.johanneshiry'
+description = 'Simple PRM'
+
+apply from: scriptsLocation + 'spotless.gradle'
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+
+  // scala core
+  implementation "org.scala-lang:scala3-library_3:$scalaVersion"
+  implementation 'org.scala-lang.modules:scala-parallel-collections_3:1.0.4'
+
+  // akka
+  implementation "com.typesafe.akka:akka-actor-typed_${scalaMajorVersion}:${akkaVersion}"
+  implementation platform("com.typesafe.akka:akka-bom_$scalaMajorVersion:2.6.18")
+  testImplementation "com.typesafe.akka:akka-actor-testkit-typed_$scalaMajorVersion:2.6.18"
+
+  // logging
+  implementation "com.typesafe.scala-logging:scala-logging_${scalaMajorVersion}:3.9.4"
+  implementation 'ch.qos.logback:logback-classic:1.2.10'
+
+  // testing
+  testImplementation "org.scalatest:scalatest_$scalaMajorVersion:3.2.11"
+  testRuntimeClasspath 'com.vladsch.flexmark:flexmark-all:0.64.0'
+  testImplementation 'org.pegdown:pegdown:1.6.0'
+}
+
+tasks.withType(JavaCompile) {
+  options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc){
+  options.encoding = 'UTF-8'
+}
