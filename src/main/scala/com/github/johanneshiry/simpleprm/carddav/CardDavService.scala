@@ -84,19 +84,6 @@ object CardDavService extends LazyLogging {
       }
     }
 
-  //  // sync requires get + update
-  //  // sardine calls are time consuming, parallelization may be worth a look ...
-  //  private def syncContacts(sardineClientWrapper: SardineClientWrapper): Unit = {
-  //    logger.info("Syncing contacts with server ...")
-  //
-  //    // get contacts from server
-  //    val contacts = sardineClientWrapper.listDir.map(_.flatMap(get(_, sardineClientWrapper)))
-  //
-  //    // todo persist them in local database using writer service
-  //
-  //    // todo debug information about fetching + either failure or success
-  //  }
-
   private def get(
       davResourceWrapper: DavResourceWrapper,
       sardineClientWrapper: SardineClientWrapper
