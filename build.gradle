@@ -37,19 +37,26 @@ dependencies {
 
   // akka
   implementation "com.typesafe.akka:akka-actor-typed_${scalaMajorVersion}:${akkaVersion}"
-  implementation platform("com.typesafe.akka:akka-bom_$scalaMajorVersion:2.6.18")
-  testImplementation "com.typesafe.akka:akka-actor-testkit-typed_$scalaMajorVersion:2.6.18"
+  implementation platform("com.typesafe.akka:akka-bom_$scalaMajorVersion:${akkaVersion}")
+  testImplementation "com.typesafe.akka:akka-actor-testkit-typed_$scalaMajorVersion:${akkaVersion}"
 
   // logging
   implementation "com.typesafe.scala-logging:scala-logging_${scalaMajorVersion}:3.9.4"
   implementation 'ch.qos.logback:logback-classic:1.2.11'
 
   // webdav client library
-  implementation 'com.github.lookfirst:sardine:5.10' // todo exclude vulnerable dependencies -> https://mvnrepository.com/artifact/com.github.lookfirst/sardine/5.10
+  implementation 'com.github.lookfirst:sardine:5.10'
+  // todo exclude vulnerable dependencies -> https://mvnrepository.com/artifact/com.github.lookfirst/sardine/5.10
 
   // card dav parser
   implementation 'com.googlecode.ez-vcard:ez-vcard:0.11.3'
 
+  // mongo db driver
+  implementation 'org.reactivemongo:reactivemongo_3:1.1.0-noshaded-RC3'
+  implementation 'io.netty:netty-all:4.1.75.Final' // required by mongo db driver // todo replace by specific required dependendencies
+
+  //  implementation 'io.netty:netty-common:4.1.75.Final' // required by mongo db driver
+  //  implementation 'io.netty:netty-transport:4.1.75.Final'
 
   // testing
   testImplementation "org.scalatest:scalatest_$scalaMajorVersion:3.2.11"
@@ -62,6 +69,6 @@ tasks.withType(JavaCompile) {
   options.encoding = 'UTF-8'
 }
 
-tasks.withType(Javadoc){
+tasks.withType(Javadoc) {
   options.encoding = 'UTF-8'
 }

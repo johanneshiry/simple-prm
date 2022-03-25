@@ -6,6 +6,7 @@ package com.github.johanneshiry.simpleprm.carddav
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
+import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.github.sardine.Sardine
 import com.typesafe.scalalogging.LazyLogging
 import ezvcard.VCard
@@ -34,7 +35,7 @@ object CardDavService extends LazyLogging {
   //// get responses
   sealed trait GetResponse extends CardDavServiceResponse
 
-  final case class GetSuccessful(contacts: Seq[VCard]) extends GetResponse
+  final case class GetSuccessful(contacts: Seq[Contact]) extends GetResponse
 
   final case class GetFailed(exception: Throwable) extends GetResponse
 
@@ -76,7 +77,7 @@ object CardDavService extends LazyLogging {
                 case Failure(exception) =>
                   replyTo ! GetFailed(exception)
                 case Success(serverContacts) =>
-                  replyTo ! GetSuccessful(serverContacts)
+                  replyTo ! GetSuccessful(serverContacts.map(Contact.apply))
               }
               Behaviors.same
             // todo log debug information about fetching + either failure or success

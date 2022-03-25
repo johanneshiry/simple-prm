@@ -5,23 +5,29 @@
 package com.github.johanneshiry.simpleprm.carddav
 
 import akka.actor.typed.{ActorRef, Behavior}
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.util.Timeout
 import com.github.johanneshiry.simpleprm.carddav.CardDavService.{
   CardDavServiceCmd,
   GetFailed,
   GetSuccessful
 }
-import com.github.johanneshiry.simpleprm.io.{ReaderService, WriterService}
+import com.github.johanneshiry.simpleprm.io.{
+  Connector,
+  ReaderService,
+  WriterService
+}
 import com.github.johanneshiry.simpleprm.io.ReaderService.{
   ReadContactsFailed,
   ReadContactsSuccessful,
   ReaderServiceCmd
 }
 import com.github.johanneshiry.simpleprm.io.WriterService.WriterServiceCmd
+import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.typesafe.scalalogging.LazyLogging
 import ezvcard.VCard
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.*
 import scala.util.{Failure, Success}
 
@@ -34,7 +40,7 @@ object SyncService extends LazyLogging {
 
   private sealed trait ServerGetResponse extends SyncServiceCmd
 
-  private final case class ServerGetSuccessful(contacts: Seq[VCard])
+  private final case class ServerGetSuccessful(contacts: Seq[Contact])
       extends ServerGetResponse
 
   private final case class ServerGetFailed(throwable: Throwable)
@@ -42,31 +48,35 @@ object SyncService extends LazyLogging {
 
   private sealed trait LocalGetResponse extends SyncServiceCmd
 
-  private final case class LocalGetSuccessful(contacts: Seq[VCard])
+  private final case class LocalGetSuccessful(contacts: Seq[Contact])
       extends LocalGetResponse
 
   private final case class LocalGetFailed(throwable: Throwable)
       extends LocalGetResponse
 
+  private sealed trait SyncResult extends SyncServiceCmd
+
+  private final case class SyncSuccessful() extends SyncResult
+
+  private final case class SyncFailed() extends SyncResult
+
   // state data
   private final case class StateData(
       cardDavService: ActorRef[CardDavServiceCmd],
-      readerService: ActorRef[ReaderServiceCmd],
-      writerService: ActorRef[WriterServiceCmd]
+      connector: Connector
   )
 
   def apply(
       syncInterval: FiniteDuration,
       cardDavService: ActorRef[CardDavServiceCmd],
-      readerService: ActorRef[ReaderServiceCmd],
-      writerService: ActorRef[WriterServiceCmd]
+      connector: Connector
   ): Behavior[SyncServiceCmd] =
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
         // setup timer with fixed delay for sync with card dav server
         timers.startTimerWithFixedDelay(Sync, syncInterval)
 
-        idle(StateData(cardDavService, readerService, writerService))
+        idle(StateData(cardDavService, connector))
       }
     }
 
@@ -82,11 +92,10 @@ object SyncService extends LazyLogging {
             case Success(GetFailed(ex)) => ServerGetFailed(ex)
             case Failure(exception)     => ServerGetFailed(exception)
           }
-          ctx.ask(stateData.readerService, ReaderService.ReadContacts.apply) {
-            case Success(ReadContactsSuccessful(localContacts)) =>
+          ctx.pipeToSelf(stateData.connector.getAllContacts) {
+            case Success(localContacts) =>
               LocalGetSuccessful(localContacts)
-            case Success(ReadContactsFailed(ex)) => LocalGetFailed(ex)
-            case Failure(exception)              => LocalGetFailed(exception)
+            case Failure(exception) => LocalGetFailed(exception)
           }
           sync(stateData)()
         case invalid =>
@@ -101,9 +110,23 @@ object SyncService extends LazyLogging {
   ): Behavior[SyncServiceCmd] = Behaviors.receive { case (ctx, msg) =>
     msg match {
       case serverGetResponse: ServerGetResponse =>
-        handleGetResponses(stateData, Some(serverGetResponse), localGetResponse)
+        handleGetResponses(
+          stateData,
+          Some(serverGetResponse),
+          localGetResponse
+        )(ctx)
       case localGetResponse: LocalGetResponse =>
-        handleGetResponses(stateData, serverGetResponse, Some(localGetResponse))
+        handleGetResponses(
+          stateData,
+          serverGetResponse,
+          Some(localGetResponse)
+        )(ctx)
+      case _: SyncSuccessful =>
+        logger.info("Sync successful!") // todo
+        idle(stateData)
+      case _: SyncFailed =>
+        logger.info("Sync failed!") // todo
+        idle(stateData)
       case invalid =>
         logger.error(s"Invalid message in sync() received: $invalid")
         Behaviors.same
@@ -114,23 +137,29 @@ object SyncService extends LazyLogging {
       stateData: StateData,
       serverGetResponse: Option[ServerGetResponse],
       localGetResponse: Option[LocalGetResponse]
-  ) = {
-
+  )(ctx: ActorContext[SyncServiceCmd]): Behavior[SyncServiceCmd] = {
     (serverGetResponse, localGetResponse) match {
       case (
             Some(ServerGetSuccessful(serverContacts)),
             Some(LocalGetSuccessful(localContacts))
           ) =>
-        val addContacts = serverContacts.diff(localContacts)
-        val delContacts = localContacts.diff(serverContacts)
+        implicit val ec: ExecutionContext = ctx.executionContext
+        val removedContacts = localContacts.diff(serverContacts)
 
-        // one shot - handle retries etc. inside writer service globally
-        if (addContacts.nonEmpty)
-          stateData.writerService ! WriterService.AddContacts(addContacts)
-        if (delContacts.nonEmpty)
-          stateData.writerService ! WriterService.DelContacts(delContacts)
-
-        idle(stateData)
+        ctx.pipeToSelf(
+          Future.sequence(
+            Seq(
+              stateData.connector.upsertContacts(serverContacts),
+              stateData.connector.delContacts(removedContacts)
+            )
+          )
+        ) {
+          case Success(value) =>
+            SyncSuccessful() // todo add parameters
+          case Failure(exception) =>
+            SyncFailed() // todo add parameters
+        }
+        sync(stateData)()
       case (Some(serverGetFailed: ServerGetFailed), _) =>
         logger.error(
           "Get contacts from server failed!",
