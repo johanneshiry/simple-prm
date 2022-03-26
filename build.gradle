@@ -44,6 +44,9 @@ dependencies {
   implementation "com.typesafe.scala-logging:scala-logging_${scalaMajorVersion}:3.9.4"
   implementation 'ch.qos.logback:logback-classic:1.2.11'
 
+  // config
+  implementation "com.github.scopt:scopt_${scalaMajorVersion}:4.0.1" // cmd args parser
+
   // webdav client library
   implementation 'com.github.lookfirst:sardine:5.10'
   // todo exclude vulnerable dependencies -> https://mvnrepository.com/artifact/com.github.lookfirst/sardine/5.10
