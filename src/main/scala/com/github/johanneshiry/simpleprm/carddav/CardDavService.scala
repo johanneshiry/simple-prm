@@ -83,8 +83,15 @@ object CardDavService extends LazyLogging {
                 _.flatMap(get(_, stateData.client))
               ) match {
                 case Failure(exception) =>
+                  logger.error(
+                    "Cannot get contacts from CardDav server!",
+                    exception
+                  )
                   replyTo ! GetFailed(exception)
                 case Success(serverContacts) =>
+                  logger.info(
+                    s"Successfully received ${serverContacts.size} contacts from CardDav server!"
+                  )
                   replyTo ! GetSuccessful(serverContacts.map(Contact.apply))
               }
               Behaviors.same
