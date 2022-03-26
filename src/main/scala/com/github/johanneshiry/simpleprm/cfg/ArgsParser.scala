@@ -1,5 +1,8 @@
-package com.github.johanneshiry.simpleprm.cfg
+/*
+ * © 2022. Johannes Hiry
+ */
 
+package com.github.johanneshiry.simpleprm.cfg
 
 import java.io.File
 import java.nio.file.Paths
@@ -14,16 +17,16 @@ object ArgsParser extends LazyLogging {
 
   // case class for allowed arguments
   final case class Arguments(
-                              mainArgs: Array[String],
-                              configLocation: Option[String] = None,
-                              config: Option[TypesafeConfig] = None
-                            ) 
+      mainArgs: Array[String],
+      configLocation: Option[String] = None,
+      config: Option[TypesafeConfig] = None
+  )
 
   // build the config parser using scopt library
   private def buildParser: scoptOptionParser[Arguments] = {
     new scoptOptionParser[Arguments]("simple-prm") {
       opt[String]("config")
-        .action((value, args) => 
+        .action((value, args) =>
           args.copy(
             config = Some(parseTypesafeConfig(value)),
             configLocation = Option(value)
@@ -44,9 +47,9 @@ object ArgsParser extends LazyLogging {
   }
 
   private def parse(
-                     parser: scoptOptionParser[Arguments],
-                     args: Array[String]
-                   ): Option[Arguments] =
+      parser: scoptOptionParser[Arguments],
+      args: Array[String]
+  ): Option[Arguments] =
     parser.parse(args, init = Arguments(args))
 
   def parse(args: Array[String]): Option[Arguments] = parse(buildParser, args)
@@ -67,26 +70,29 @@ object ArgsParser extends LazyLogging {
         )
       )
   }
-  
+
   def prepareConfig(args: Array[String]): Try[(Arguments, TypesafeConfig)] = {
 
     parse(args) match {
       case Some(parsedArgs) =>
         parsedArgs.config match {
-          case Some(parsedArgsConfig) => 
+          case Some(parsedArgsConfig) =>
             Success((parsedArgs, parsedArgsConfig))
-          case None => 
-            Failure(new RuntimeException(
-              "Config not found! Please provide a valid config file via --config <path-to-config-file>."
-            ))
+          case None =>
+            Failure(
+              new RuntimeException(
+                "Config not found! Please provide a valid config file via --config <path-to-config-file>."
+              )
+            )
         }
       case None =>
-        Failure(new IllegalArgumentException(
-          s"Unable to parse provided command line arguments:\n${args.mkString("\n")}"
-        ))
+        Failure(
+          new IllegalArgumentException(
+            s"Unable to parse provided command line arguments:\n${args.mkString("\n")}"
+          )
+        )
     }
-    
+
   }
 
 }
-

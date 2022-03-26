@@ -67,14 +67,17 @@ object SyncService extends LazyLogging {
   )
 
   def apply(
-      syncInterval: FiniteDuration,
+      syncInterval: java.time.Duration,
       cardDavService: ActorRef[CardDavServiceCmd],
       connector: Connector
   ): Behavior[SyncServiceCmd] =
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
         // setup timer with fixed delay for sync with card dav server
-        timers.startTimerWithFixedDelay(Sync, syncInterval)
+        timers.startTimerWithFixedDelay(
+          Sync,
+          FiniteDuration(syncInterval.toMinutes, MINUTES)
+        )
 
         idle(StateData(cardDavService, connector))
       }

@@ -1,0 +1,31 @@
+////////////////////////////////////////////////////////////////////////////
+// Generate config classes reflecting the application.conf template file
+////////////////////////////////////////////////////////////////////////////
+task genConfigClass {
+  doLast {
+    def tscfgJarFile = project.file('build/tscfg-' + tscfgVersion + '.jar')
+    if (!tscfgJarFile.exists() || !tscfgJarFile.isFile()) {
+      download {
+        src 'https://github.com/carueda/tscfg/releases/download/v' + tscfgVersion + '/tscfg-' + tscfgVersion + '.jar'
+        dest buildDir
+      }
+    }
+    javaexec {
+      main = "-jar"
+      args = [
+        "build/tscfg-${tscfgVersion}.jar",
+        "--spec",
+        "src/main/resources/cfg/cfg-template.conf",
+        "--scala",
+        "--durations",
+        "--pn",
+        "com.github.johanneshiry.simpleprm.cfg",
+        "--cn",
+        "SimplePrmCfg",
+        "--dd",
+        "src/main/scala/com/github/johanneshiry/simpleprm/cfg"
+      ]
+    }
+  }
+}
+

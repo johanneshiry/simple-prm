@@ -10,11 +10,7 @@ import com.github.johanneshiry.simpleprm.carddav.{CardDavService, SyncService}
 import com.github.johanneshiry.simpleprm.carddav.CardDavService.ConfigParams
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDBConnector
-import com.github.johanneshiry.simpleprm.io.{
-  Connector,
-  ReaderService,
-  WriterService
-}
+import com.github.johanneshiry.simpleprm.io.Connector
 import com.typesafe.scalalogging.LazyLogging
 
 import java.net.URI
@@ -28,7 +24,29 @@ object SimplePrmGuardian extends LazyLogging {
 
   def apply(cfg: SimplePrmCfg): Behavior[SimplePrmGuardianCmd] =
     Behaviors.setup[SimplePrmGuardianCmd] { ctx =>
-      // setup services // todo build correctly
+      // setup services
+
+      /// card dav server service
+      val cardDavService = ctx.spawn(
+        CardDavService(
+          ConfigParams(cfg.simple_prm.carddav)
+        ),
+        "DavServerService"
+      )
+
+      // db connector
+      val connector: Connector =
+        MongoDBConnector(cfg.simple_prm.database)(ctx.executionContext)
+
+      // card dav sync service
+      val syncService = ctx.spawn(
+        SyncService(
+          cfg.simple_prm.carddav.syncInterval,
+          cardDavService,
+          connector
+        ),
+        "SyncService"
+      )
 
       idle()
     }

@@ -2,6 +2,7 @@ plugins {
   id 'java' //java support
   id 'scala'
   id 'com.diffplug.spotless' version '6.2.1'
+  id "de.undercouch.download" version "4.1.2" // downloads plugin
 }
 
 ext {
@@ -10,6 +11,8 @@ ext {
   scalaMajorVersion = '3'
   scalaVersion = '3.1.1'
   akkaVersion = '2.6.18'
+
+  tscfgVersion = '0.9.997'
 
   scriptsLocation = 'gradle' + File.separator + 'scripts' + File.separator
 }
@@ -24,6 +27,7 @@ group = 'com.github.johanneshiry'
 description = 'Simple PRM'
 
 apply from: scriptsLocation + 'spotless.gradle'
+apply from: scriptsLocation + 'tscfg.gradle' // config tasks
 
 repositories {
   mavenCentral()

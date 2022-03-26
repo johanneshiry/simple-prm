@@ -4,6 +4,7 @@
 
 package com.github.johanneshiry.simpleprm.io.mongodb
 
+import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
 import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.github.johanneshiry.simpleprm.io.mongodb.{
   BSONReader,
@@ -119,6 +120,15 @@ final case class MongoDBConnector(
 }
 
 object MongoDBConnector {
+
+  def apply(
+      cfg: SimplePrmCfg.MongoDB
+  )(implicit ec: ExecutionContext): MongoDBConnector = apply(
+    cfg.host,
+    cfg.user,
+    cfg.password,
+    cfg.authenticationDb
+  )
 
   def apply(
       host: String,

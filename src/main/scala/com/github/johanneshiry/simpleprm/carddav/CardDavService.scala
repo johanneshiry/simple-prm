@@ -6,6 +6,7 @@ package com.github.johanneshiry.simpleprm.carddav
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{Behaviors, TimerScheduler}
+import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
 import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.github.sardine.Sardine
 import com.typesafe.scalalogging.LazyLogging
@@ -45,6 +46,13 @@ object CardDavService extends LazyLogging {
       username: String,
       password: String
   )
+
+  object ConfigParams {
+
+    def apply(cfg: SimplePrmCfg.SimplePrm.Carddav): ConfigParams =
+      ConfigParams(new URI(cfg.uri), cfg.username, cfg.password)
+
+  }
 
   private final case class StateData(client: SardineClientWrapper)
 
