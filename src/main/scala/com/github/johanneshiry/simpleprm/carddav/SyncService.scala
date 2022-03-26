@@ -67,7 +67,7 @@ object SyncService extends LazyLogging {
         // setup timer with fixed delay for sync with card dav server
         timers.startTimerWithFixedDelay(
           Sync,
-          FiniteDuration(syncInterval.toMinutes, MINUTES)
+          FiniteDuration(syncInterval.toSeconds, SECONDS)
         )
 
         idle(StateData(cardDavService, connector))
