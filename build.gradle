@@ -59,7 +59,9 @@ dependencies {
   implementation 'com.googlecode.ez-vcard:ez-vcard:0.11.3'
 
   // mongo db driver
-  implementation 'org.reactivemongo:reactivemongo_3:1.1.0-noshaded-RC3'
+  implementation ('org.reactivemongo:reactivemongo_3:1.1.0-noshaded-RC3') {
+    exclude group: 'org.slf4j'
+  }
   implementation 'io.netty:netty-all:4.1.75.Final' // required by mongo db driver // todo replace by specific required dependendencies
 
   //  implementation 'io.netty:netty-common:4.1.75.Final' // required by mongo db driver

@@ -24,6 +24,7 @@ object SimplePrmGuardian extends LazyLogging {
 
   def apply(cfg: SimplePrmCfg): Behavior[SimplePrmGuardianCmd] =
     Behaviors.setup[SimplePrmGuardianCmd] { ctx =>
+      logger.info("Starting SimplePrm ...")
       // setup services
 
       /// card dav server service
@@ -48,6 +49,7 @@ object SimplePrmGuardian extends LazyLogging {
         "SyncService"
       )
 
+      logger.info("Startup complete!")
       idle()
     }
 

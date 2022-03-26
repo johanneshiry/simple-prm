@@ -4,7 +4,8 @@
 
 package com.github.johanneshiry.simpleprm.main
 
-import com.github.johanneshiry.simpleprm.cfg.ArgsParser
+import akka.actor.typed.ActorSystem
+import com.github.johanneshiry.simpleprm.cfg.{ArgsParser, SimplePrmCfg}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration.*
@@ -17,13 +18,11 @@ object Run extends LazyLogging {
 
     ArgsParser.prepareConfig(args) match {
       case Failure(exception) =>
-        logger.error(s"Initialization failed! Error: $exception")
+        logger.error(s"Initialization failed!", exception)
       case Success((_, config)) =>
-
+        val system =
+          ActorSystem(SimplePrmGuardian(SimplePrmCfg(config)), "SimplePrm")
     }
-
-    // todo as config from carueda
-    val syncInterval: FiniteDuration = 15 minutes
 
   }
 

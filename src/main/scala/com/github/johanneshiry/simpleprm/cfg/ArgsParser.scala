@@ -85,10 +85,16 @@ object ArgsParser extends LazyLogging {
               )
             )
         }
-      case None =>
+      case None if args.nonEmpty =>
         Failure(
           new IllegalArgumentException(
             s"Unable to parse provided command line arguments:\n${args.mkString("\n")}"
+          )
+        )
+      case None if args.isEmpty =>
+        Failure(
+          new IllegalArgumentException(
+            s"No arguments provided. Please provide at least the path to the configuration file!"
           )
         )
     }
