@@ -12,17 +12,8 @@ import com.github.johanneshiry.simpleprm.carddav.CardDavService.{
   GetFailed,
   GetSuccessful
 }
-import com.github.johanneshiry.simpleprm.io.{
-  Connector,
-  ReaderService,
-  WriterService
-}
-import com.github.johanneshiry.simpleprm.io.ReaderService.{
-  ReadContactsFailed,
-  ReadContactsSuccessful,
-  ReaderServiceCmd
-}
-import com.github.johanneshiry.simpleprm.io.WriterService.WriterServiceCmd
+import com.github.johanneshiry.simpleprm.io.Connector
+
 import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.typesafe.scalalogging.LazyLogging
 import ezvcard.VCard
