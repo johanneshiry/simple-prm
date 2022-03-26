@@ -139,6 +139,8 @@ object SyncService extends LazyLogging {
           ) =>
         implicit val ec: ExecutionContext = ctx.executionContext
         val removedContacts = localContacts.diff(serverContacts)
+        logger.info(s"Upserting ${serverContacts.size} contacts!")
+        logger.info(s"Removing ${removedContacts.size} contacts!")
 
         ctx.pipeToSelf(
           Future.sequence(
@@ -156,12 +158,12 @@ object SyncService extends LazyLogging {
         sync(stateData)()
       case (Some(serverGetFailed: ServerGetFailed), _) =>
         logger.error(
-          "Get contacts from server failed!",
+          "Getting contacts from server failed!",
           serverGetFailed.throwable
         )
         idle(stateData)
       case (Some(_), Some(localGet: LocalGetFailed)) =>
-        logger.error("Get local contacts failed!", localGet.throwable)
+        logger.error("Getting local contacts failed!", localGet.throwable)
         idle(stateData)
       case (_, _) =>
         // not finished yet, go back to sync
