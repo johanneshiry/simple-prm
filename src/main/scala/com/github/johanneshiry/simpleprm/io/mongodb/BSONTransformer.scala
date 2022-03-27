@@ -121,6 +121,7 @@ object BSONTransformer {
           fieldToBsonVals: Seq[(String, BSONValue)],
           fieldName: Option[String]
       ): Option[BSONDocument] =
+        // field name in optional is "value"
         fieldToBsonVals.toMap.get("value") match {
           case Some(doc: BSONDocument) if fieldToBsonVals.size == 1 =>
             fieldName
