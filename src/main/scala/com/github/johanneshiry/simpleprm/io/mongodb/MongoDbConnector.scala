@@ -5,32 +5,35 @@
 package com.github.johanneshiry.simpleprm.io.mongodb
 
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
-import com.github.johanneshiry.simpleprm.io.model.Contact
+import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbModel.Contact as MongoDbContact
 import com.github.johanneshiry.simpleprm.io.mongodb.{
   BSONReader,
   BSONTransformer
 }
-import com.github.johanneshiry.simpleprm.io.Connector
-import ezvcard.VCard
+import com.github.johanneshiry.simpleprm.io.DbConnector
+import com.github.johanneshiry.simpleprm.io.model.Contact
+import ezvcard.{Ezvcard, VCard}
 import ezvcard.property.Uid
 import reactivemongo.api.MongoConnectionOptions.Credential
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.bson.{
   BSONDocument,
   BSONDocumentReader,
-  BSONDocumentWriter
+  BSONDocumentWriter,
+  BSONString
 }
 import reactivemongo.api.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
 
-final case class MongoDBConnector(
+final case class MongoDbConnector(
     nodes: Seq[String],
     options: MongoConnectionOptions,
     db: String
 )(implicit ec: ExecutionContext)
-    extends Connector {
+    extends DbConnector
+    with BSONReader {
 
   private val contactsColName = "contacts"
 
@@ -68,12 +71,12 @@ final case class MongoDBConnector(
       collection: BSONCollection
   ) = {
     val deleteBuilder = collection.delete(ordered = false)
-    implicit val writer: BSONDocumentWriter[Contact] =
-      BSONTransformer.bsonWriter[Contact]
+    implicit val writer: BSONDocumentWriter[MongoDbContact] =
+      BSONTransformer.bsonWriter[MongoDbContact]
 
     // select contact by its uid
     val selectorFunc = (contact: Contact) =>
-      BSONDocument("uid" -> contact.uid.getValue)
+      BSONDocument("_id" -> contact.uid.getValue)
 
     // q = selector
     val deletes = Future.sequence(
@@ -86,20 +89,32 @@ final case class MongoDBConnector(
       contacts: Seq[Contact],
       collection: BSONCollection
   ): Future[collection.MultiBulkWriteResult] = {
-    implicit val writer: BSONDocumentWriter[Contact] =
-      BSONTransformer.bsonWriter[Contact]
+
     val updateBuilder = collection.update(ordered = true)
 
     // select contact by its uid
     val selectorFunc = (contact: Contact) =>
-      BSONDocument("uid" -> contact.uid.getValue)
+      BSONDocument("_id" -> contact.uid.getValue)
+
+    // only the vCard needs to be update
+    // todo move to transformer with field name
+    val modifierFunc = (contact: Contact) =>
+      BSONDocument(
+        "vCard" -> BSONString(
+          Ezvcard
+            .write(contact.vCard)
+            .prodId(false)
+            .version(contact.vCard.getVersion)
+            .go()
+        )
+      )
 
     // q = selector, u = modifier
     val updates = Future.sequence(
       contacts.map(contact =>
         updateBuilder.element(
           q = selectorFunc(contact),
-          u = contact,
+          u = modifierFunc(contact),
           upsert = true
         )
       )
@@ -110,7 +125,6 @@ final case class MongoDBConnector(
   private def findAllContacts(
       collection: BSONCollection
   ): Future[Vector[Contact]] = {
-    implicit val reader: BSONDocumentReader[Contact] = BSONReader.contactReader
     val queryBuilder = collection.find(BSONDocument())
     queryBuilder
       .cursor[Contact]()
@@ -119,11 +133,11 @@ final case class MongoDBConnector(
 
 }
 
-object MongoDBConnector {
+object MongoDbConnector {
 
   def apply(
       cfg: SimplePrmCfg.MongoDB
-  )(implicit ec: ExecutionContext): MongoDBConnector = apply(
+  )(implicit ec: ExecutionContext): MongoDbConnector = apply(
     cfg.host,
     cfg.user,
     cfg.password,
@@ -136,8 +150,8 @@ object MongoDBConnector {
       password: Option[String],
       authenticationDb: Option[String],
       db: String = "simple-prm"
-  )(implicit ec: ExecutionContext): MongoDBConnector =
-    new MongoDBConnector(
+  )(implicit ec: ExecutionContext): MongoDbConnector =
+    new MongoDbConnector(
       Seq(host),
       MongoConnectionOptions(
         authenticationDatabase = authenticationDb,

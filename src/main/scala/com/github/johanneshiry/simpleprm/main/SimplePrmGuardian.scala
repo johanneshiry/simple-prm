@@ -9,8 +9,8 @@ import akka.actor.typed.scaladsl.Behaviors
 import com.github.johanneshiry.simpleprm.carddav.{CardDavService, SyncService}
 import com.github.johanneshiry.simpleprm.carddav.CardDavService.ConfigParams
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
-import com.github.johanneshiry.simpleprm.io.mongodb.MongoDBConnector
-import com.github.johanneshiry.simpleprm.io.Connector
+import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbConnector
+import com.github.johanneshiry.simpleprm.io.DbConnector
 import com.typesafe.scalalogging.LazyLogging
 
 import java.net.URI
@@ -36,8 +36,8 @@ object SimplePrmGuardian extends LazyLogging {
       )
 
       // db connector
-      val connector: Connector =
-        MongoDBConnector(cfg.simple_prm.database)(ctx.executionContext)
+      val connector: DbConnector =
+        MongoDbConnector(cfg.simple_prm.database)(ctx.executionContext)
 
       // card dav sync service
       val syncService = ctx.spawn(

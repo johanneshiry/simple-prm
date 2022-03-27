@@ -8,7 +8,7 @@ import ezvcard.{Ezvcard, VCard}
 import ezvcard.property.Uid
 import reactivemongo.api.bson.*
 
-import java.time.ZonedDateTime
+import java.time.{Duration, ZonedDateTime}
 import java.util.UUID
 import scala.compiletime.summonAll
 import scala.deriving.Mirror
@@ -31,8 +31,8 @@ object BSONTransformer {
     summon[Transformer[A]].f(a)
 
   def bsonWriter[A: Transformer]: BSONDocumentWriter[A] =
-    BSONDocumentWriter[A] { contact =>
-      BSONTransformer.transform(contact)
+    BSONDocumentWriter[A] { x =>
+      BSONTransformer.transform(x)
     }
 
   // Base trait
@@ -66,6 +66,11 @@ object BSONTransformer {
       "" -> BSONString(x.toString)
     )
 
+  given Transformer[Duration] with
+    def f(x: Duration): BSONDocument = BSONDocument(
+      "" -> BSONString(x.toString)
+    )
+
   given Transformer[UUID] with
     def f(x: UUID): BSONDocument = BSONDocument("" -> BSONString(x.toString))
 
@@ -81,7 +86,7 @@ object BSONTransformer {
   given [T](using t: Transformer[T]): Transformer[Option[T]] =
     (x: Option[T]) =>
       x match
-        case None    => BSONDocument("" -> BSONString(""))
+        case None    => BSONDocument.empty
         case Some(x) => t.f(x)
 
   //  /** Transforms a list of case classes into CSV data, including header row

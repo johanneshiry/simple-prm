@@ -11,7 +11,7 @@ import ezvcard.property.Uid
 import scala.concurrent.Future
 import scala.util.Try
 
-trait Connector {
+trait DbConnector {
 
   def getAllContacts: Future[Vector[Contact]]
 

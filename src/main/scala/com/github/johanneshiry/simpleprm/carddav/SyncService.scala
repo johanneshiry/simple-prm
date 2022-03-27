@@ -12,7 +12,7 @@ import com.github.johanneshiry.simpleprm.carddav.CardDavService.{
   GetFailed,
   GetSuccessful
 }
-import com.github.johanneshiry.simpleprm.io.Connector
+import com.github.johanneshiry.simpleprm.io.DbConnector
 
 import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.typesafe.scalalogging.LazyLogging
@@ -54,13 +54,13 @@ object SyncService extends LazyLogging {
   // state data
   private final case class StateData(
       cardDavService: ActorRef[CardDavServiceCmd],
-      connector: Connector
+      connector: DbConnector
   )
 
   def apply(
       syncInterval: java.time.Duration,
       cardDavService: ActorRef[CardDavServiceCmd],
-      connector: Connector
+      connector: DbConnector
   ): Behavior[SyncServiceCmd] =
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
@@ -138,21 +138,27 @@ object SyncService extends LazyLogging {
             Some(LocalGetSuccessful(localContacts))
           ) =>
         implicit val ec: ExecutionContext = ctx.executionContext
-        val removedContacts = localContacts.diff(serverContacts)
+
+        // only delete contacts whose uid is not available at the server anymore
+        val serverContactsUids = serverContacts.map(_.uid)
+        val toBeDeletedContacts = localContacts
+          .diff(serverContacts)
+          .filterNot(contact => serverContactsUids.contains(contact.uid))
         logger.info(s"Upserting ${serverContacts.size} contacts!")
-        logger.info(s"Removing ${removedContacts.size} contacts!")
+        logger.info(s"Removing ${toBeDeletedContacts.size} contacts!")
 
         ctx.pipeToSelf(
           Future.sequence(
             Seq(
               stateData.connector.upsertContacts(serverContacts),
-              stateData.connector.delContacts(removedContacts)
+              stateData.connector.delContacts(toBeDeletedContacts)
             )
           )
         ) {
           case Success(value) =>
             SyncSuccessful() // todo add parameters
           case Failure(exception) =>
+            logger.error("ex", exception)
             SyncFailed() // todo add parameters
         }
         sync(stateData)()
