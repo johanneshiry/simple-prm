@@ -71,8 +71,6 @@ final case class MongoDbConnector(
       collection: BSONCollection
   ) = {
     val deleteBuilder = collection.delete(ordered = false)
-    implicit val writer: BSONDocumentWriter[MongoDbContact] =
-      BSONTransformer.bsonWriter[MongoDbContact]
 
     // select contact by its uid
     val selectorFunc = (contact: Contact) =>

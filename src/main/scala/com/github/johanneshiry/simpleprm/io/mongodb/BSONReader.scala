@@ -46,7 +46,8 @@ private[mongodb] trait BSONReader {
         vCard <- bson
           .getAsTry[String]("vCard")
           .map(vCardString => Ezvcard.parse(vCardString).first())
-      } yield MongoDbContact(vCard, stayInTouch)
+        mongoDbContact <- MongoDbContact(vCard, stayInTouch)
+      } yield mongoDbContact
     }
 
 }
