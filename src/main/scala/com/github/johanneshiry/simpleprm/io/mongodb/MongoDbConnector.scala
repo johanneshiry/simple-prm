@@ -35,8 +35,6 @@ final case class MongoDbConnector(
     extends DbConnector
     with BSONReader {
 
-  private val contactsColName = "contacts"
-
   private val driver: AsyncDriver = new reactivemongo.api.AsyncDriver
   private val connection: Future[MongoConnection] = driver.connect(
     nodes = nodes,
@@ -61,10 +59,13 @@ final case class MongoDbConnector(
   }
 
   private def contactsCollection: Future[BSONCollection] =
-    dbConnection.map(_.collection(contactsColName))
+    dbConnection.map(_.collection("contacts"))
 
   private def dbConnection: Future[DB] =
     connection.flatMap(_.database(db))
+
+  private val contactByUidSelector = (contact: Contact) =>
+    BSONTransformer.transform(contact.uid, Some("_id"))
 
   private def deleteContacts(
       contacts: Seq[Contact],
@@ -72,13 +73,11 @@ final case class MongoDbConnector(
   ) = {
     val deleteBuilder = collection.delete(ordered = false)
 
-    // select contact by its uid
-    val selectorFunc = (contact: Contact) =>
-      BSONDocument("_id" -> contact.uid.getValue)
-
     // q = selector
     val deletes = Future.sequence(
-      contacts.map(contact => deleteBuilder.element(q = selectorFunc(contact)))
+      contacts.map(contact =>
+        deleteBuilder.element(q = contactByUidSelector(contact))
+      )
     )
     deletes.flatMap(deleteBuilder.many(_))
   }
@@ -90,28 +89,15 @@ final case class MongoDbConnector(
 
     val updateBuilder = collection.update(ordered = true)
 
-    // select contact by its uid
-    val selectorFunc = (contact: Contact) =>
-      BSONDocument("_id" -> contact.uid.getValue)
-
     // only the vCard needs to be update
-    // todo move to transformer with field name
     val modifierFunc = (contact: Contact) =>
-      BSONDocument(
-        "vCard" -> BSONString(
-          Ezvcard
-            .write(contact.vCard)
-            .prodId(false)
-            .version(contact.vCard.getVersion)
-            .go()
-        )
-      )
+      BSONTransformer.transform(contact.vCard, Some("vCard"))
 
     // q = selector, u = modifier
     val updates = Future.sequence(
       contacts.map(contact =>
         updateBuilder.element(
-          q = selectorFunc(contact),
+          q = contactByUidSelector(contact),
           u = modifierFunc(contact),
           upsert = true
         )
