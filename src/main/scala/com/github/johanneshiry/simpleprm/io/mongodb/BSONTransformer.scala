@@ -4,6 +4,7 @@
 
 package com.github.johanneshiry.simpleprm.io.mongodb
 
+import com.github.johanneshiry.simpleprm.io.model.StayInTouch
 import ezvcard.{Ezvcard, VCard}
 import ezvcard.property.Uid
 import reactivemongo.api.bson.*
@@ -27,77 +28,85 @@ object BSONTransformer {
     * @param a
     *   The object to convert
     */
-  def transform[A: Transformer](a: A): BSONDocument =
-    summon[Transformer[A]].f(a)
+  def transform[A: Transformer](
+      a: A,
+      fieldName: Option[String] = None
+  ): BSONDocument =
+    summon[Transformer[A]].f(a, fieldName)
 
-  def bsonWriter[A: Transformer]: BSONDocumentWriter[A] =
+  def bsonWriter[A: Transformer](
+      fieldName: Option[String] = None
+  ): BSONDocumentWriter[A] =
     BSONDocumentWriter[A] { x =>
-      BSONTransformer.transform(x)
+      BSONTransformer.transform(x, fieldName)
     }
 
   // Base trait
   trait Transformer[T] {
-    def f(t: T): BSONDocument
-//    def fieldName: String // todo JH
+    def f(t: T, fieldName: Option[String] = None): BSONDocument
   }
 
   // Create a type class of T => String for every type in your case class
   given Transformer[String] with
-    def f(x: String): BSONDocument = BSONDocument("" -> BSONString(x))
+    def f(x: String, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(fieldName.getOrElse("") -> BSONString(x))
 
   given Transformer[Int] with
-    def f(x: Int): BSONDocument = BSONDocument("" -> BSONInteger(x))
+    def f(x: Int, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(fieldName.getOrElse("") -> BSONInteger(x))
 
   given Transformer[Double] with
-    def f(x: Double): BSONDocument = BSONDocument("" -> BSONDouble(x))
+    def f(x: Double, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(fieldName.getOrElse("") -> BSONDouble(x))
 
   given Transformer[URL] with
-    def f(x: URL): BSONDocument = BSONDocument(
-      "" -> BSONString(x.toExternalForm)
-    )
+    def f(x: URL, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(
+        fieldName.getOrElse("") -> BSONString(x.toExternalForm)
+      )
 
   given Transformer[Path] with
-    def f(x: Path): BSONDocument = BSONDocument(
-      "" -> BSONString(x.getFileName.toString)
-    )
+    def f(x: Path, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(
+        fieldName.getOrElse("") -> BSONString(x.getFileName.toString)
+      )
 
   given Transformer[ZonedDateTime] with
-    def f(x: ZonedDateTime): BSONDocument = BSONDocument(
-      "" -> BSONString(x.toString)
-    )
+    def f(x: ZonedDateTime, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(
+        fieldName.getOrElse("") -> BSONString(x.toString)
+      )
 
   given Transformer[Duration] with
-    def f(x: Duration): BSONDocument = BSONDocument(
-      "" -> BSONString(x.toString)
-    )
+    def f(x: Duration, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(
+        fieldName.getOrElse("") -> BSONString(x.toString)
+      )
 
   given Transformer[UUID] with
-    def f(x: UUID): BSONDocument = BSONDocument("" -> BSONString(x.toString))
+    def f(x: UUID, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(fieldName.getOrElse("") -> BSONString(x.toString))
 
   given Transformer[VCard] with
-    def f(x: VCard): BSONDocument = BSONDocument(
-      "" ->
-        BSONString(Ezvcard.write(x).prodId(false).version(x.getVersion).go())
-    )
+    def f(x: VCard, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(
+        fieldName.getOrElse("") ->
+          BSONString(Ezvcard.write(x).prodId(false).version(x.getVersion).go())
+      )
 
   given Transformer[Uid] with
-    def f(x: Uid): BSONDocument = BSONDocument("" -> BSONString(x.getValue))
+    def f(x: Uid, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(fieldName.getOrElse("") -> BSONString(x.getValue))
 
-  given [T](using t: Transformer[T]): Transformer[Option[T]] =
-    (x: Option[T]) =>
+  given [T](using t: Transformer[T]): Transformer[Option[T]] with
+    def f(x: Option[T], fieldName: Option[String] = None): BSONDocument =
       x match
-        case None    => BSONDocument.empty
-        case Some(x) => t.f(x)
+        case None =>
+          BSONDocument.empty
+        case Some(x) =>
+          t.f(x, fieldName)
 
-  //  /** Transforms a list of case classes into CSV data, including header row
-  //   */
-  //  given [A <: Product](using t: Transformer[A]): Transformer[List[A]] =
-  //  (x: List[A]) =>
-  //    x.headOption.map(
-  //      asHeader(_) :: x.map(transform)
-  //    ).map(_.mkString("\n")).getOrElse("")
-
-  /** Turns a case class into an BSONDocument(""-> of BSONValues)
+  /** Turns a case class into an BSONDocument
     *
     * Fucking voodoo from
     * https://kavedaa.github.io/auto-ui-generation/auto-ui-generation.html
@@ -108,23 +117,43 @@ object BSONTransformer {
       val elemTransformers: Seq[Transformer[Any]] =
         summonAll[ElemTransformers].toList.asInstanceOf[List[Transformer[Any]]]
 
-      def f(a: A): BSONDocument =
+      private def handleSingleOption(
+          fieldToBsonVals: Seq[(String, BSONValue)],
+          fieldName: Option[String]
+      ): Option[BSONDocument] =
+        fieldToBsonVals.toMap.get("value") match {
+          case Some(doc: BSONDocument) if fieldToBsonVals.size == 1 =>
+            fieldName
+              .map(fieldName => BSONDocument(fieldName -> doc))
+              .orElse(Some(doc))
+          case _ =>
+            None
+        }
+
+      def f(a: A, fieldName: Option[String] = None): BSONDocument = {
         val elems = a.productIterator.toList
-        val transformed =
+        val transformed: Seq[(String, BSONValue)] =
           fieldNames(a).zip(elems.zip(elemTransformers)) flatMap {
             case (fieldName, (elem, transformer)) =>
-              transformer
-                .f(elem)
-                .get("")
-                .filter {
-                  // remove options that has been passed in as None
-                  case x: BSONString =>
-                    x.value.nonEmpty
-                  case _ => true
-                }
-                .map(bsonVal => fieldName -> bsonVal)
+              val doc = transformer
+                .f(elem, Some(fieldName)) match {
+                case document: BSONDocument if document.elements.size > 1 =>
+                  // options and nested objects
+                  Some(document)
+                case document =>
+                  // everything else
+                  document.get(fieldName)
+              }
+              doc.map(bsonVal => fieldName -> bsonVal)
           }
-        BSONDocument(transformed)
+        handleSingleOption(transformed, fieldName).getOrElse(
+          fieldName
+            .map(providedFieldName =>
+              BSONDocument(providedFieldName -> BSONDocument(transformed))
+            )
+            .getOrElse(BSONDocument(transformed))
+        )
+      }
 
   /** Returns the field names of a case class
     */
