@@ -11,7 +11,7 @@ import com.github.johanneshiry.simpleprm.io.mongodb.{
   BSONTransformer
 }
 import com.github.johanneshiry.simpleprm.io.DbConnector
-import com.github.johanneshiry.simpleprm.io.model.Contact
+import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
 import ezvcard.{Ezvcard, VCard}
 import ezvcard.property.Uid
 import reactivemongo.api.MongoConnectionOptions.Credential
@@ -24,6 +24,7 @@ import reactivemongo.api.bson.{
 }
 import reactivemongo.api.*
 
+import java.time.{Duration, ZonedDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
 
@@ -67,6 +68,8 @@ final case class MongoDbConnector(
   private val contactByUidSelector = (contact: Contact) =>
     BSONTransformer.transform(contact.uid, Some("_id"))
 
+  private val set = (doc: BSONDocument) => BSONDocument("$set" -> doc)
+
   private def deleteContacts(
       contacts: Seq[Contact],
       collection: BSONCollection
@@ -91,7 +94,7 @@ final case class MongoDbConnector(
 
     // only the vCard needs to be updated
     val modifierFunc = (contact: Contact) =>
-      BSONTransformer.transform(contact.vCard, Some("vCard"))
+      set(BSONTransformer.transform(contact.vCard, Some("vCard")))
 
     // q = selector, u = modifier
     val updates = Future.sequence(
