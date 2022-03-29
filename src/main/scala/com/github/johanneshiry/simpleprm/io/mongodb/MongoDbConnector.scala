@@ -89,7 +89,7 @@ final case class MongoDbConnector(
 
     val updateBuilder = collection.update(ordered = true)
 
-    // only the vCard needs to be update
+    // only the vCard needs to be updated
     val modifierFunc = (contact: Contact) =>
       BSONTransformer.transform(contact.vCard, Some("vCard"))
 
