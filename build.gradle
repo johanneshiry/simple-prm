@@ -11,6 +11,7 @@ ext {
   scalaMajorVersion = '3'
   scalaVersion = '3.1.1'
   akkaVersion = '2.6.18'
+  circeVersion = '0.14.1'
 
   tscfgVersion = '0.9.997'
 
@@ -40,9 +41,18 @@ dependencies {
   implementation 'org.scala-lang.modules:scala-parallel-collections_3:1.0.4'
 
   // akka
-  implementation "com.typesafe.akka:akka-actor-typed_${scalaMajorVersion}:${akkaVersion}"
-  implementation platform("com.typesafe.akka:akka-bom_$scalaMajorVersion:${akkaVersion}")
-  testImplementation "com.typesafe.akka:akka-actor-testkit-typed_$scalaMajorVersion:${akkaVersion}"
+  implementation "com.typesafe.akka:akka-actor-typed_2.13:${akkaVersion}"
+  implementation "com.typesafe.akka:akka-stream-typed_2.13:${akkaVersion}"
+  implementation "com.typesafe.akka:akka-http_2.13:10.2.9"
+  implementation platform("com.typesafe.akka:akka-bom_2.13:${akkaVersion}")
+  testImplementation "com.typesafe.akka:akka-actor-testkit-typed_2.13:${akkaVersion}"
+
+  // json parsing with circe
+  implementation 'de.heikoseeberger:akka-http-circe_2.13:1.40.0-RC1'
+  implementation 'io.circe:circe-core_3:0.15.0-M1'
+  implementation 'io.circe:circe-generic_3:0.15.0-M1'
+  implementation 'io.circe:circe-parser_3:0.15.0-M1'
+
 
   // logging
   implementation "com.typesafe.scala-logging:scala-logging_${scalaMajorVersion}:3.9.4"
@@ -61,6 +71,7 @@ dependencies {
   // mongo db driver
   implementation ('org.reactivemongo:reactivemongo_3:1.1.0-noshaded-RC3') {
     exclude group: 'org.slf4j'
+    exclude group: 'com.typesafe.akka' // uses akka scala 3 otherwise
   }
   implementation 'io.netty:netty-all:4.1.75.Final' // required by mongo db driver // todo replace by specific required dependendencies
 
