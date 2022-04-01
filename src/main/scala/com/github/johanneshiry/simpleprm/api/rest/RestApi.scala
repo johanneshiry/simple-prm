@@ -39,7 +39,7 @@ private[rest] abstract class RestApi(version: String)(implicit
   }
 
   val route: Route = handleExceptions(exceptionHandler) {
-    pathPrefix("rest" / version) {
+    pathPrefix("api" / "rest" / version) {
       apiRoute ~
         healthCheckRoute
     }
