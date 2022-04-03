@@ -85,7 +85,6 @@ object StayInTouchApi extends FailFastCirceSupport {
     path("create")(
       post(
         entity(as[StayInTouch]) { stayInTouch =>
-//        println(stayInTouch) // todo
           complete(handler.createStayInTouch(stayInTouch))
         }
       )
