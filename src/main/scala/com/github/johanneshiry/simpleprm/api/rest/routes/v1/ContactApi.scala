@@ -21,6 +21,7 @@ import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.GetContac
 import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
 import akka.http.scaladsl.server.Directives.*
+import com.github.johanneshiry.simpleprm.io.DbConnector
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,6 +33,20 @@ object ContactApi extends FailFastCirceSupport with MarshalSupport {
     def getContacts(
         limit: Option[Int] = None
     ): Future[GetContactsPaginatedResponse]
+  }
+
+  object ContactHandler {
+    final case class ContactHandler(dbConnector: DbConnector)(implicit
+        ec: ExecutionContext
+    ) extends ContactApi.ContactHandler {
+      def getContacts(
+          limit: Option[Int] = None
+      ): Future[GetContactsPaginatedResponse] = dbConnector
+        .getContacts(limit)
+        .map(contacts =>
+          GetContactsPaginatedResponseOK(PaginatedContacts(contacts))
+        )
+    }
   }
 
   // responses
