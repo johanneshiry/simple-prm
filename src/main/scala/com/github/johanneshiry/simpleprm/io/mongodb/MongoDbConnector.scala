@@ -42,8 +42,11 @@ final case class MongoDbConnector(
     options = options
   )
 
+  def getContacts(limit: Option[Int] = None): Future[Vector[Contact]] =
+    contactsCollection.flatMap(findAllContacts(_, limit))
+
   def getAllContacts: Future[Vector[Contact]] =
-    contactsCollection.flatMap(findAllContacts)
+    contactsCollection.flatMap(findAllContacts(_))
 
   def upsertContacts(contacts: Seq[Contact]): Future[Unit] = {
     val handleMe = contactsCollection.flatMap(
@@ -110,9 +113,12 @@ final case class MongoDbConnector(
   }
 
   private def findAllContacts(
-      collection: BSONCollection
+      collection: BSONCollection,
+      limit: Option[Int] = None
   ): Future[Vector[Contact]] = {
-    val queryBuilder = collection.find(BSONDocument())
+    // batchSize == 0 -> unspecified batchSize
+    val queryBuilder =
+      collection.find(BSONDocument()).batchSize(limit.getOrElse(0))
     queryBuilder
       .cursor[Contact]()
       .collect[Vector](err = Cursor.FailOnError[Vector[Contact]]())

@@ -13,6 +13,8 @@ import scala.util.Try
 
 trait DbConnector {
 
+  def getContacts(limit: Option[Int] = None): Future[Vector[Contact]]
+
   def getAllContacts: Future[Vector[Contact]]
 
   def upsertContacts(contacts: Seq[Contact]): Future[Unit]
