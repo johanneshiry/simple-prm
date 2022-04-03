@@ -21,10 +21,11 @@ import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.GetContac
 import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
 import akka.http.scaladsl.server.Directives.*
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object ContactApi {
+object ContactApi extends FailFastCirceSupport {
 
   // handler interface containing all methods supported by the api
   trait ContactHandler {
