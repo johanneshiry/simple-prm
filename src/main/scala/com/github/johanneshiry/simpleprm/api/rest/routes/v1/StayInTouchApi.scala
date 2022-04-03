@@ -32,7 +32,7 @@ import io.circe.Decoder.Result
 import io.circe.{Decoder, Encoder, HCursor, Json}
 import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
 
-object StayInTouchApi extends FailFastCirceSupport {
+object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
 
   import io.circe.generic.auto._
 
@@ -69,11 +69,7 @@ object StayInTouchApi extends FailFastCirceSupport {
     )(implicit ec: ExecutionContext): Future[List[Marshalling[HttpResponse]]] =
       createStayInTouchResp match {
         case c @ CreateStayInTouchResponseOK(stayInTouch) =>
-          Marshal(stayInTouch).to[ResponseEntity].map { stayInTouchEntity =>
-            Marshalling.Opaque { () =>
-              HttpResponse(c.statusCode, entity = stayInTouchEntity)
-            } :: Nil
-          }
+          marshal(stayInTouch, c.statusCode)
       }
 
   }

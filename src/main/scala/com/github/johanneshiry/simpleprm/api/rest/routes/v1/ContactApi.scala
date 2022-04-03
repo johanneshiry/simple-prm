@@ -25,7 +25,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object ContactApi extends FailFastCirceSupport {
+object ContactApi extends FailFastCirceSupport with MarshalSupport {
 
   // handler interface containing all methods supported by the api
   trait ContactHandler {
@@ -65,14 +65,8 @@ object ContactApi extends FailFastCirceSupport {
     )(implicit ec: ExecutionContext): Future[List[Marshalling[HttpResponse]]] =
       getContactsPaginatedResponse match {
         case c @ GetContactsPaginatedResponseOK(paginatedContact) =>
-          Marshal(paginatedContact).to[ResponseEntity].map {
-            stayInTouchEntity => // todo remove code duplicates if possible!
-              Marshalling.Opaque { () =>
-                HttpResponse(c.statusCode, entity = stayInTouchEntity)
-              } :: Nil
-          }
+          marshal(paginatedContact, c.statusCode)
       }
-
   }
 
   // routes
