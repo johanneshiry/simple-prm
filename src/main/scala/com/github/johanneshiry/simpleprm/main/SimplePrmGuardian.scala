@@ -4,8 +4,12 @@
 
 package com.github.johanneshiry.simpleprm.main
 
-import akka.actor.typed.Behavior
+import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.http.scaladsl.Http
+import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.ContactHandler.ContactHandler
+import com.github.johanneshiry.simpleprm.api.rest.routes.v1.RestApiV1
+import com.github.johanneshiry.simpleprm.api.rest.routes.v1.StayInTouchApi.StayInTouchHandler
 import com.github.johanneshiry.simpleprm.carddav.{CardDavService, SyncService}
 import com.github.johanneshiry.simpleprm.carddav.CardDavService.ConfigParams
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
@@ -14,6 +18,7 @@ import com.github.johanneshiry.simpleprm.io.DbConnector
 import com.typesafe.scalalogging.LazyLogging
 
 import java.net.URI
+import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration.*
 
 object SimplePrmGuardian extends LazyLogging {
@@ -24,6 +29,9 @@ object SimplePrmGuardian extends LazyLogging {
 
   def apply(cfg: SimplePrmCfg): Behavior[SimplePrmGuardianCmd] =
     Behaviors.setup[SimplePrmGuardianCmd] { ctx =>
+      implicit val system: ActorSystem[Nothing] = ctx.system
+      implicit val ec: ExecutionContextExecutor = ctx.system.executionContext
+
       logger.info("Starting SimplePrm ...")
       // setup services
 
@@ -47,6 +55,13 @@ object SimplePrmGuardian extends LazyLogging {
           connector
         ),
         "SyncService"
+      )
+
+      /// http server + rest api
+      RestApiV1(
+        Http().newServerAt(cfg.simple_prm.rest.host, cfg.simple_prm.rest.port),
+        ContactHandler(connector),
+        StayInTouchHandler.StayInTouchHandler(connector)
       )
 
       logger.info("Startup complete!")

@@ -31,7 +31,7 @@ final case class RestApiV1(
     contactHandler: ContactHandler,
     stayInTouchHandler: StayInTouchHandler
 )(implicit
-    actorSystem: ActorSystem[Any],
+    actorSystem: ActorSystem[Nothing],
     ec: ExecutionContext
 ) extends RestApi("v1") {
 

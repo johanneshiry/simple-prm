@@ -154,7 +154,7 @@ object MongoDbConnector {
   def apply(
       cfg: SimplePrmCfg.MongoDB
   )(implicit ec: ExecutionContext): MongoDbConnector = apply(
-    cfg.host,
+    s"${cfg.host}:${cfg.port}",
     cfg.user,
     cfg.password,
     cfg.authenticationDb

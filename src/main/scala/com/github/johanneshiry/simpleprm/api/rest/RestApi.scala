@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 private[rest] abstract class RestApi(version: String)(implicit
-    actorSystem: ActorSystem[Any],
+    actorSystem: ActorSystem[Nothing],
     ec: ExecutionContext
 ) {
 
