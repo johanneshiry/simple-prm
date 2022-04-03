@@ -50,7 +50,7 @@ object CardDavService extends LazyLogging {
   object ConfigParams {
 
     def apply(cfg: SimplePrmCfg.SimplePrm.Carddav): ConfigParams =
-      ConfigParams(new URI(cfg.uri), cfg.username, cfg.password)
+      ConfigParams(new URI(s"${cfg.uri}}:${cfg.host}"), cfg.username, cfg.password)
 
   }
 
