@@ -5,26 +5,15 @@
 package com.github.johanneshiry.simpleprm.api.rest.routes.v1
 
 import akka.http.scaladsl.marshalling
-import akka.http.scaladsl.marshalling.{
-  Marshal,
-  Marshaller,
-  Marshalling,
-  ToResponseMarshaller
-}
+import akka.http.scaladsl.marshalling.{Marshal, Marshaller, Marshalling, ToResponseMarshaller}
 
 import scala.concurrent.{ExecutionContext, Future}
-import akka.http.scaladsl.model.{
-  ContentType,
-  HttpEntity,
-  HttpResponse,
-  ResponseEntity,
-  StatusCode,
-  StatusCodes
-}
+import akka.http.scaladsl.model.{ContentType, HttpEntity, HttpResponse, ResponseEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
+import com.github.johanneshiry.simpleprm.io.DbConnector
 import com.github.johanneshiry.simpleprm.io.model.{JSONCodecs, StayInTouch}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import ezvcard.property.Uid
@@ -41,6 +30,18 @@ object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
     def createStayInTouch(
         stayInTouch: StayInTouch
     ): Future[CreateStayInTouchResponse]
+  }
+
+  object StayInTouchHandler {
+
+    final case class StayInTouchHandler(dbConnector: DbConnector)(implicit
+                                                                  ec: ExecutionContext) extends StayInTouchApi.StayInTouchHandler {
+      def createStayInTouch(
+                             stayInTouch: StayInTouch
+                           ): Future[CreateStayInTouchResponse] = dbConnector.createStayInTouch(stayInTouch)
+        .map(CreateStayInTouchResponseOK)
+    }
+
   }
 
   // responses
