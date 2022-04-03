@@ -4,7 +4,7 @@
 
 package com.github.johanneshiry.simpleprm.io
 
-import com.github.johanneshiry.simpleprm.io.model.Contact
+import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
 import ezvcard.VCard
 import ezvcard.property.Uid
 
@@ -20,5 +20,7 @@ trait DbConnector {
   def upsertContacts(contacts: Seq[Contact]): Future[Unit]
 
   def delContacts(contacts: Seq[Contact]): Future[Unit]
+
+  def upsertStayInTouch(stayInTouch: StayInTouch): Future[StayInTouch]
 
 }

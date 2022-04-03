@@ -43,10 +43,10 @@ final case class MongoDbConnector(
   )
 
   def getContacts(limit: Option[Int] = None): Future[Vector[Contact]] =
-    contactsCollection.flatMap(findAllContacts(_, limit))
+    contactsCollection.flatMap(findContacts(_, limit))
 
   def getAllContacts: Future[Vector[Contact]] =
-    contactsCollection.flatMap(findAllContacts(_))
+    contactsCollection.flatMap(findContacts(_))
 
   def upsertContacts(contacts: Seq[Contact]): Future[Unit] = {
     val handleMe = contactsCollection.flatMap(
@@ -60,6 +60,13 @@ final case class MongoDbConnector(
       deleteContacts(contacts, _)
     ) // todo process errors
     handleMe.map(_ => {}) // todo adapt handling
+  }
+
+  def upsertStayInTouch(stayInTouch: StayInTouch): Future[StayInTouch] = {
+    val handleMe = contactsCollection.flatMap(
+      upsertStayInTouch(stayInTouch, _)
+    )
+    handleMe.map(_ => stayInTouch) // todo handle errors
   }
 
   private def contactsCollection: Future[BSONCollection] =
@@ -112,7 +119,7 @@ final case class MongoDbConnector(
     updates.flatMap(updateBuilder.many(_))
   }
 
-  private def findAllContacts(
+  private def findContacts(
       collection: BSONCollection,
       limit: Option[Int] = None
   ): Future[Vector[Contact]] = {
@@ -122,6 +129,22 @@ final case class MongoDbConnector(
     queryBuilder
       .cursor[Contact]()
       .collect[Vector](err = Cursor.FailOnError[Vector[Contact]]())
+  }
+
+  private def upsertStayInTouch(
+      stayInTouch: StayInTouch,
+      collection: BSONCollection
+  ) = {
+
+    val selector = BSONTransformer.transform(stayInTouch.contactId, Some("_id"))
+
+    // only the stayInTouch field needs to be updated
+    val modifier = set(
+      BSONTransformer.transform(stayInTouch, Some("stayInTouch"))
+    )
+
+    collection.update.one(selector, modifier, upsert = true)
+
   }
 
 }
