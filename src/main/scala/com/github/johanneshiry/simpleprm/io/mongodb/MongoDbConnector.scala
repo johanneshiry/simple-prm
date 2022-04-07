@@ -69,6 +69,9 @@ final case class MongoDbConnector(
     handleMe.map(_ => stayInTouch) // todo handle errors
   }
 
+  def getAllStayInTouch: Future[Vector[StayInTouch]] =
+    contactsCollection.flatMap(findStayInTouch(_))
+
   private def contactsCollection: Future[BSONCollection] =
     dbConnection.map(_.collection("contacts"))
 
@@ -79,6 +82,9 @@ final case class MongoDbConnector(
     BSONTransformer.transform(contact.uid, Some("_id"))
 
   private val set = (doc: BSONDocument) => BSONDocument("$set" -> doc)
+
+  private val notNull = (fieldName: String) =>
+    BSONDocument(fieldName -> "{$ne:null}")
 
   private def deleteContacts(
       contacts: Seq[Contact],
@@ -145,6 +151,19 @@ final case class MongoDbConnector(
 
     collection.update.one(selector, modifier, upsert = true)
 
+  }
+
+  private def findStayInTouch(
+      collection: BSONCollection,
+      limit: Option[Int] = None
+  ): Future[Vector[StayInTouch]] = {
+    // batchSize == 0 -> unspecified batchSize
+    val queryBuilder =
+      collection.find(notNull("stayInTouch")).batchSize(limit.getOrElse(0))
+    queryBuilder
+      .cursor[MongoDbContact]()
+      .collect[Vector](err = Cursor.FailOnError[Vector[MongoDbContact]]())
+      .map(_.flatMap(_.stayInTouch))
   }
 
 }

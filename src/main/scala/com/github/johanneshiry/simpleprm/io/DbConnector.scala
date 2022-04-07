@@ -23,4 +23,6 @@ trait DbConnector {
 
   def upsertStayInTouch(stayInTouch: StayInTouch): Future[StayInTouch]
 
+  def getAllStayInTouch: Future[Vector[StayInTouch]]
+
 }
