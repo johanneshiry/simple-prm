@@ -53,7 +53,6 @@ dependencies {
   implementation 'io.circe:circe-generic_3:0.15.0-M1'
   implementation 'io.circe:circe-parser_3:0.15.0-M1'
 
-
   // logging
   implementation "com.typesafe.scala-logging:scala-logging_${scalaMajorVersion}:3.9.4"
   implementation 'ch.qos.logback:logback-classic:1.2.11'
@@ -77,6 +76,10 @@ dependencies {
 
   //  implementation 'io.netty:netty-common:4.1.75.Final' // required by mongo db driver
   //  implementation 'io.netty:netty-transport:4.1.75.Final'
+
+  // send e-mails
+  implementation "com.github.eikek:emil-common_$scalaMajorVersion:0.12.0"
+  implementation "com.github.eikek:emil-javamail_$scalaMajorVersion:0.12.0"
 
   // testing
   testImplementation "org.scalatest:scalatest_$scalaMajorVersion:3.2.11"
