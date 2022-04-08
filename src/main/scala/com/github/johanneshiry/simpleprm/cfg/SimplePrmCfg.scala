@@ -104,6 +104,7 @@ object SimplePrmCfg {
       carddav: SimplePrmCfg.SimplePrm.Carddav,
       database: SimplePrmCfg.MongoDB,
       email: SimplePrmCfg.SimplePrm.Email,
+      notifier: SimplePrmCfg.SimplePrm.Notifier,
       rest: SimplePrmCfg.SimplePrm.Rest
   )
   object SimplePrm {
@@ -237,6 +238,23 @@ object SimplePrmCfg {
 
     }
 
+    final case class Notifier(
+        scheduleHour: java.time.Duration
+    )
+    object Notifier {
+      def apply(
+          c: com.typesafe.config.Config,
+          parentPath: java.lang.String,
+          $tsCfgValidator: $TsCfgValidator
+      ): SimplePrmCfg.SimplePrm.Notifier = {
+        SimplePrmCfg.SimplePrm.Notifier(
+          scheduleHour =
+            if (c.hasPathOrNull("scheduleHour")) c.getDuration("scheduleHour")
+            else java.time.Duration.parse("PT0.009S")
+        )
+      }
+    }
+
     final case class Rest(
         host: java.lang.String,
         port: scala.Int
@@ -308,6 +326,12 @@ object SimplePrmCfg {
           if (c.hasPathOrNull("email")) c.getConfig("email")
           else com.typesafe.config.ConfigFactory.parseString("email{}"),
           parentPath + "email.",
+          $tsCfgValidator
+        ),
+        notifier = SimplePrmCfg.SimplePrm.Notifier(
+          if (c.hasPathOrNull("notifier")) c.getConfig("notifier")
+          else com.typesafe.config.ConfigFactory.parseString("notifier{}"),
+          parentPath + "notifier.",
           $tsCfgValidator
         ),
         rest = SimplePrmCfg.SimplePrm.Rest(

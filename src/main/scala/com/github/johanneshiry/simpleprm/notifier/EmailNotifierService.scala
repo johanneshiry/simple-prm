@@ -133,6 +133,27 @@ object EmailNotifierService extends EmailNotifierService {
       extends EmailNotifierServiceCmd
 
   // configs
+  final case class EmailNotifierConfig(
+      mailConfig: MailConfig,
+      runHour: FiniteDuration,
+      dbConnector: DbConnector
+  )
+
+  object EmailNotifierConfig {
+
+    def apply(
+        emailCfg: SimplePrmCfg.SimplePrm.Email,
+        notifierCfg: SimplePrmCfg.SimplePrm.Notifier,
+        dbConnector: DbConnector
+    ): EmailNotifierConfig =
+      new EmailNotifierConfig(
+        MailConfig(emailCfg),
+        FiniteDuration(notifierCfg.scheduleHour.toHours, TimeUnit.HOURS),
+        dbConnector
+      )
+
+  }
+
   object MailConfig {
 
     def apply(cfg: SimplePrmCfg.SimplePrm.Email): emil.MailConfig =
@@ -173,12 +194,6 @@ object EmailNotifierService extends EmailNotifierService {
       }
 
   }
-
-  final case class EmailNotifierConfig(
-      mailConfig: MailConfig,
-      runHour: FiniteDuration,
-      dbConnector: DbConnector
-  )
 
   // state data
   final case class EmailNotifierStateData(
