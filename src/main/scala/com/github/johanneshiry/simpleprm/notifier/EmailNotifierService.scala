@@ -142,7 +142,7 @@ object EmailNotifierService extends EmailNotifierService {
   object EmailNotifierConfig {
 
     def apply(
-        emailCfg: SimplePrmCfg.SimplePrm.Email,
+        emailCfg: SimplePrmCfg.SimplePrm.EmailServer,
         notifierCfg: SimplePrmCfg.SimplePrm.Notifier,
         dbConnector: DbConnector
     ): EmailNotifierConfig =
@@ -156,7 +156,7 @@ object EmailNotifierService extends EmailNotifierService {
 
   object MailConfig {
 
-    def apply(cfg: SimplePrmCfg.SimplePrm.Email): emil.MailConfig =
+    def apply(cfg: SimplePrmCfg.SimplePrm.EmailServer): emil.MailConfig =
       apply(
         s"${cfg.protocol}://${cfg.url}:${cfg.port}",
         cfg.user,

@@ -103,7 +103,7 @@ object SimplePrmCfg {
   final case class SimplePrm(
       carddav: SimplePrmCfg.SimplePrm.Carddav,
       database: SimplePrmCfg.MongoDB,
-      email: SimplePrmCfg.SimplePrm.Email,
+      emailServer: SimplePrmCfg.SimplePrm.EmailServer,
       notifier: SimplePrmCfg.SimplePrm.Notifier,
       rest: SimplePrmCfg.SimplePrm.Rest
   )
@@ -147,7 +147,7 @@ object SimplePrmCfg {
 
     }
 
-    final case class Email(
+    final case class EmailServer(
         disableCertificateCheck: scala.Boolean,
         enableXOAuth2: scala.Boolean,
         password: java.lang.String,
@@ -158,13 +158,13 @@ object SimplePrmCfg {
         url: java.lang.String,
         user: java.lang.String
     )
-    object Email {
+    object EmailServer {
       def apply(
           c: com.typesafe.config.Config,
           parentPath: java.lang.String,
           $tsCfgValidator: $TsCfgValidator
-      ): SimplePrmCfg.SimplePrm.Email = {
-        SimplePrmCfg.SimplePrm.Email(
+      ): SimplePrmCfg.SimplePrm.EmailServer = {
+        SimplePrmCfg.SimplePrm.EmailServer(
           disableCertificateCheck =
             $_reqBln(parentPath, c, "disableCertificateCheck", $tsCfgValidator),
           enableXOAuth2 =
@@ -239,15 +239,55 @@ object SimplePrmCfg {
     }
 
     final case class Notifier(
+        email: SimplePrmCfg.SimplePrm.Notifier.Email,
         scheduleHour: java.time.Duration
     )
     object Notifier {
+      final case class Email(
+          receiver: java.lang.String,
+          sender: java.lang.String
+      )
+      object Email {
+        def apply(
+            c: com.typesafe.config.Config,
+            parentPath: java.lang.String,
+            $tsCfgValidator: $TsCfgValidator
+        ): SimplePrmCfg.SimplePrm.Notifier.Email = {
+          SimplePrmCfg.SimplePrm.Notifier.Email(
+            receiver = $_reqStr(parentPath, c, "receiver", $tsCfgValidator),
+            sender = $_reqStr(parentPath, c, "sender", $tsCfgValidator)
+          )
+        }
+        private def $_reqStr(
+            parentPath: java.lang.String,
+            c: com.typesafe.config.Config,
+            path: java.lang.String,
+            $tsCfgValidator: $TsCfgValidator
+        ): java.lang.String = {
+          if (c == null) null
+          else
+            try c.getString(path)
+            catch {
+              case e: com.typesafe.config.ConfigException =>
+                $tsCfgValidator.addBadPath(parentPath + path, e)
+                null
+            }
+        }
+
+      }
+
       def apply(
           c: com.typesafe.config.Config,
           parentPath: java.lang.String,
           $tsCfgValidator: $TsCfgValidator
       ): SimplePrmCfg.SimplePrm.Notifier = {
         SimplePrmCfg.SimplePrm.Notifier(
+          email = SimplePrmCfg.SimplePrm.Notifier.Email(
+            if (c.hasPathOrNull("email")) c.getConfig("email")
+            else com.typesafe.config.ConfigFactory.parseString("email{}"),
+            parentPath + "email.",
+            $tsCfgValidator
+          ),
           scheduleHour =
             if (c.hasPathOrNull("scheduleHour")) c.getDuration("scheduleHour")
             else java.time.Duration.parse("PT0.009S")
@@ -322,10 +362,10 @@ object SimplePrmCfg {
           parentPath + "database.",
           $tsCfgValidator
         ),
-        email = SimplePrmCfg.SimplePrm.Email(
-          if (c.hasPathOrNull("email")) c.getConfig("email")
-          else com.typesafe.config.ConfigFactory.parseString("email{}"),
-          parentPath + "email.",
+        emailServer = SimplePrmCfg.SimplePrm.EmailServer(
+          if (c.hasPathOrNull("emailServer")) c.getConfig("emailServer")
+          else com.typesafe.config.ConfigFactory.parseString("emailServer{}"),
+          parentPath + "emailServer.",
           $tsCfgValidator
         ),
         notifier = SimplePrmCfg.SimplePrm.Notifier(
