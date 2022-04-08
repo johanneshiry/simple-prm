@@ -9,6 +9,8 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
+import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
+import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg.SSLType
 import com.github.johanneshiry.simpleprm.io.DbConnector
 import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
 import com.github.johanneshiry.simpleprm.notifier.EmailNotifierService.{
@@ -133,11 +135,22 @@ object EmailNotifierService extends EmailNotifierService {
   // configs
   object MailConfig {
 
+    def apply(cfg: SimplePrmCfg.SimplePrm.Email): emil.MailConfig =
+      apply(
+        s"${cfg.protocol}://${cfg.url}:${cfg.port}",
+        cfg.user,
+        cfg.password,
+        mapSSLType(cfg.sslType),
+        cfg.enableXOAuth2,
+        cfg.disableCertificateCheck,
+        FiniteDuration(cfg.timeout.toSeconds, TimeUnit.SECONDS)
+      )
+
     def apply(
         url: String,
         user: String,
         password: String,
-        sslType: SSLType = SSLType.SSL,
+        sslType: emil.SSLType = emil.SSLType.SSL,
         enableXOAuth2: Boolean = false,
         disableCertificateCheck: Boolean = false,
         timeout: Duration = FiniteDuration(10, TimeUnit.SECONDS)
@@ -150,6 +163,15 @@ object EmailNotifierService extends EmailNotifierService {
       disableCertificateCheck,
       timeout
     )
+
+    private def mapSSLType(cfgSSLType: SimplePrmCfg.SSLType): emil.SSLType =
+      cfgSSLType match {
+        case SimplePrmCfg.SSLType.ssl =>
+          emil.SSLType.SSL
+        case SimplePrmCfg.SSLType.starttls     => emil.SSLType.StartTLS
+        case SimplePrmCfg.SSLType.noencryption => emil.SSLType.NoEncryption
+      }
+
   }
 
   final case class EmailNotifierConfig(

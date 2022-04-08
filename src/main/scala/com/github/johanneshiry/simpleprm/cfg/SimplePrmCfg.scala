@@ -8,6 +8,20 @@ final case class SimplePrmCfg(
     simple_prm: SimplePrmCfg.SimplePrm
 )
 object SimplePrmCfg {
+  sealed trait MailProtocol
+  object MailProtocol {
+    object smtp extends MailProtocol
+    def $resEnum(
+        name: java.lang.String,
+        path: java.lang.String,
+        $tsCfgValidator: $TsCfgValidator
+    ): MailProtocol = name match {
+      case "smtp" => MailProtocol.smtp
+      case v =>
+        $tsCfgValidator.addInvalidEnumValue(path, v, "MailProtocol")
+        null
+    }
+  }
   final case class MongoDB(
       authenticationDb: scala.Option[java.lang.String],
       host: java.lang.String,
@@ -68,9 +82,28 @@ object SimplePrmCfg {
 
   }
 
+  sealed trait SSLType
+  object SSLType {
+    object ssl extends SSLType
+    object starttls extends SSLType
+    object noencryption extends SSLType
+    def $resEnum(
+        name: java.lang.String,
+        path: java.lang.String,
+        $tsCfgValidator: $TsCfgValidator
+    ): SSLType = name match {
+      case "ssl"          => SSLType.ssl
+      case "starttls"     => SSLType.starttls
+      case "noencryption" => SSLType.noencryption
+      case v =>
+        $tsCfgValidator.addInvalidEnumValue(path, v, "SSLType")
+        null
+    }
+  }
   final case class SimplePrm(
       carddav: SimplePrmCfg.SimplePrm.Carddav,
       database: SimplePrmCfg.MongoDB,
+      email: SimplePrmCfg.SimplePrm.Email,
       rest: SimplePrmCfg.SimplePrm.Rest
   )
   object SimplePrm {
@@ -95,6 +128,97 @@ object SimplePrmCfg {
           username = $_reqStr(parentPath, c, "username", $tsCfgValidator)
         )
       }
+      private def $_reqStr(
+          parentPath: java.lang.String,
+          c: com.typesafe.config.Config,
+          path: java.lang.String,
+          $tsCfgValidator: $TsCfgValidator
+      ): java.lang.String = {
+        if (c == null) null
+        else
+          try c.getString(path)
+          catch {
+            case e: com.typesafe.config.ConfigException =>
+              $tsCfgValidator.addBadPath(parentPath + path, e)
+              null
+          }
+      }
+
+    }
+
+    final case class Email(
+        disableCertificateCheck: scala.Boolean,
+        enableXOAuth2: scala.Boolean,
+        password: java.lang.String,
+        port: scala.Int,
+        protocol: SimplePrmCfg.MailProtocol,
+        sslType: SimplePrmCfg.SSLType,
+        timeout: java.time.Duration,
+        url: java.lang.String,
+        user: java.lang.String
+    )
+    object Email {
+      def apply(
+          c: com.typesafe.config.Config,
+          parentPath: java.lang.String,
+          $tsCfgValidator: $TsCfgValidator
+      ): SimplePrmCfg.SimplePrm.Email = {
+        SimplePrmCfg.SimplePrm.Email(
+          disableCertificateCheck =
+            $_reqBln(parentPath, c, "disableCertificateCheck", $tsCfgValidator),
+          enableXOAuth2 =
+            $_reqBln(parentPath, c, "enableXOAuth2", $tsCfgValidator),
+          password = $_reqStr(parentPath, c, "password", $tsCfgValidator),
+          port = $_reqInt(parentPath, c, "port", $tsCfgValidator),
+          protocol = SimplePrmCfg.MailProtocol.$resEnum(
+            c.getString("protocol"),
+            parentPath + "protocol",
+            $tsCfgValidator
+          ),
+          sslType = SimplePrmCfg.SSLType.$resEnum(
+            c.getString("sslType"),
+            parentPath + "sslType",
+            $tsCfgValidator
+          ),
+          timeout =
+            if (c.hasPathOrNull("timeout")) c.getDuration("timeout")
+            else java.time.Duration.parse("PT0.01S"),
+          url = $_reqStr(parentPath, c, "url", $tsCfgValidator),
+          user = $_reqStr(parentPath, c, "user", $tsCfgValidator)
+        )
+      }
+      private def $_reqBln(
+          parentPath: java.lang.String,
+          c: com.typesafe.config.Config,
+          path: java.lang.String,
+          $tsCfgValidator: $TsCfgValidator
+      ): scala.Boolean = {
+        if (c == null) false
+        else
+          try c.getBoolean(path)
+          catch {
+            case e: com.typesafe.config.ConfigException =>
+              $tsCfgValidator.addBadPath(parentPath + path, e)
+              false
+          }
+      }
+
+      private def $_reqInt(
+          parentPath: java.lang.String,
+          c: com.typesafe.config.Config,
+          path: java.lang.String,
+          $tsCfgValidator: $TsCfgValidator
+      ): scala.Int = {
+        if (c == null) 0
+        else
+          try c.getInt(path)
+          catch {
+            case e: com.typesafe.config.ConfigException =>
+              $tsCfgValidator.addBadPath(parentPath + path, e)
+              0
+          }
+      }
+
       private def $_reqStr(
           parentPath: java.lang.String,
           c: com.typesafe.config.Config,
@@ -178,6 +302,12 @@ object SimplePrmCfg {
           if (c.hasPathOrNull("database")) c.getConfig("database")
           else com.typesafe.config.ConfigFactory.parseString("database{}"),
           parentPath + "database.",
+          $tsCfgValidator
+        ),
+        email = SimplePrmCfg.SimplePrm.Email(
+          if (c.hasPathOrNull("email")) c.getConfig("email")
+          else com.typesafe.config.ConfigFactory.parseString("email{}"),
+          parentPath + "email.",
           $tsCfgValidator
         ),
         rest = SimplePrmCfg.SimplePrm.Rest(
