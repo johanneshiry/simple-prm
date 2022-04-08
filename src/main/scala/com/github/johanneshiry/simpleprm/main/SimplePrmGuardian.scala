@@ -15,6 +15,11 @@ import com.github.johanneshiry.simpleprm.carddav.CardDavService.ConfigParams
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbConnector
 import com.github.johanneshiry.simpleprm.io.DbConnector
+import com.github.johanneshiry.simpleprm.notifier.{
+  EmailComposer,
+  EmailNotifierService
+}
+import com.github.johanneshiry.simpleprm.notifier.EmailNotifierService.EmailNotifierConfig
 import com.typesafe.scalalogging.LazyLogging
 
 import java.net.URI
@@ -55,6 +60,19 @@ object SimplePrmGuardian extends LazyLogging {
           connector
         ),
         "SyncService"
+      )
+
+      // email notifier
+      val notifierService = ctx.spawn(
+        EmailNotifierService(
+          EmailNotifierConfig(
+            cfg.simple_prm.emailServer,
+            cfg.simple_prm.notifier,
+            connector
+          ),
+          EmailComposer(cfg.simple_prm.notifier.email)
+        ),
+        "EmailNotifierService"
       )
 
       /// http server + rest api
