@@ -75,43 +75,51 @@ object CardDavService extends LazyLogging {
   }
 
   private def idle(stateData: StateData): Behavior[CardDavServiceCmd] =
-    Behaviors.receive { case (ctx, msg) =>
-      msg match {
-        case request: CardDavServiceRequest =>
-          request match {
-            case Get(replyTo) =>
-              logger.info(
-                s"Getting contacts from CardDav server '${stateData.client.serverUri}' ...'"
-              )
-              stateData.client.listDir.map(
-                _.flatMap(get(_, stateData.client))
-              ) match {
+    Behaviors.receiveMessage { case request: CardDavServiceRequest =>
+      request match {
+        case Get(replyTo) =>
+          logger.info(
+            s"Getting contacts from CardDav server '${stateData.client.serverUri}' ...'"
+          )
+          stateData.client.listDir.map(
+            _.flatMap(davResource =>
+              getAsVCard(davResource, stateData.client) match {
                 case Failure(exception) =>
                   logger.error(
-                    "Cannot get contacts from CardDav server!",
+                    s"Cannot read vCard from Dav resource '${davResource.davResource.getName}'!",
                     exception
                   )
-                  replyTo ! GetFailed(exception)
-                case Success(serverContacts) =>
-                  logger.info(
-                    s"Successfully received ${serverContacts.size} contacts from CardDav server!"
-                  )
-                  replyTo ! GetSuccessful(serverContacts.map(Contact.apply))
+                  Seq.empty
+                case Success(vCards) =>
+                  vCards
               }
-              Behaviors.same
-            // todo log debug information about fetching + either failure or success
+            )
+          ) match {
+            case Failure(exception) =>
+              logger.error(
+                "Cannot get contacts from CardDav server!",
+                exception
+              )
+              replyTo ! GetFailed(exception)
+            case Success(serverContacts) =>
+              logger.info(
+                s"Successfully received ${serverContacts.size} contacts from CardDav server!"
+              )
+              replyTo ! GetSuccessful(serverContacts.map(Contact.apply))
           }
+          Behaviors.same
       }
     }
 
-  private def get(
+  private def getAsVCard(
       davResourceWrapper: DavResourceWrapper,
       sardineClientWrapper: SardineClientWrapper
-  ): Seq[VCard] =
-    readVCard(sardineClientWrapper.sardine.get(davResourceWrapper.fullPath))
+  ): Try[Seq[VCard]] =
+    Try(sardineClientWrapper.sardine.get(davResourceWrapper.fullPath))
+      .flatMap(readVCard)
 
   // potential for parallelization -> concat multiple input streams into one and create worker actors
-  private def readVCard(vCardStream: InputStream): Seq[VCard] =
-    new VCardReader(vCardStream).readAll().asScala.toSeq
+  private def readVCard(vCardStream: InputStream): Try[Seq[VCard]] =
+    Try(new VCardReader(vCardStream).readAll().asScala.toSeq)
 
 }
