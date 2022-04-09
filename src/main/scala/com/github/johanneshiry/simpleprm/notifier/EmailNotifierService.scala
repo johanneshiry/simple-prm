@@ -9,7 +9,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors, TimerScheduler}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
-import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
+import com.github.johanneshiry.simpleprm.cfg.{ConfigUtil, SimplePrmCfg}
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg.SSLType
 import com.github.johanneshiry.simpleprm.io.DbConnector
 import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
@@ -26,17 +26,24 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.{Duration, FiniteDuration, HOURS}
+import scala.concurrent.duration.{Duration, FiniteDuration, HOURS, MINUTES}
 import scala.util.{Failure, Success}
 import scala.jdk.CollectionConverters.*
 
 private[notifier] trait EmailNotifierService extends LazyLogging {
 
   def initDelay(runHour: Long): FiniteDuration = {
-    val now = ZonedDateTime.now().getHour
+    val now = ZonedDateTime.now()
+    val nowHour = now.getHour
+    val nowMinute = now.getMinute
+
+    val delayHour =
+      if nowHour < runHour then runHour - nowHour else 24 - nowHour + runHour
+    val delayMinutes = delayHour * 60 - nowMinute
+
     FiniteDuration(
-      if now < runHour then runHour - now else 24 - now + runHour,
-      HOURS
+      delayMinutes,
+      MINUTES
     )
   }
 
@@ -75,7 +82,9 @@ private[notifier] trait EmailNotifierService extends LazyLogging {
         stayInTouchData.contact.vCard.getFormattedName.getValue,
         stayInTouchData.contact.vCard.getEmails.asScala.headOption
           .map(_.getValue)
-          .getOrElse("No E-Mail for contact found!")
+          .getOrElse(
+            s"No E-Mail for contact '${stayInTouchData.contact.vCard.getFormattedName}' found!"
+          )
       )
     )
 
@@ -158,7 +167,7 @@ object EmailNotifierService extends EmailNotifierService {
 
     def apply(cfg: SimplePrmCfg.SimplePrm.EmailServer): emil.MailConfig =
       apply(
-        s"${cfg.protocol}://${cfg.url}:${cfg.port}",
+        s"${ConfigUtil.protocolFromConfig(cfg.protocol)}://${cfg.url}:${cfg.port}",
         cfg.user,
         cfg.password,
         mapSSLType(cfg.sslType),
@@ -222,6 +231,7 @@ object EmailNotifierService extends EmailNotifierService {
       stateData: EmailNotifierStateData
   ): Behavior[EmailNotifierServiceCmd] =
     Behaviors.receivePartial { case (ctx, Run) =>
+      logger.info("Running e-mail notification service ...")
       ctx.pipeToSelf(
         relevantStayInTouch(stateData.config.dbConnector)(ctx.executionContext)
       ) {
@@ -248,7 +258,6 @@ object EmailNotifierService extends EmailNotifierService {
         case Failure(exception) =>
           EmailSendFailed(exception)
       }
-
       Behaviors.same
     case (_, FindStayInTouchFailed(ex)) =>
       logger.error(
