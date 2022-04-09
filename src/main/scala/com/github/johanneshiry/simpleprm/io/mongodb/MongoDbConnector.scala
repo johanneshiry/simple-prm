@@ -12,6 +12,7 @@ import com.github.johanneshiry.simpleprm.io.mongodb.{
 }
 import com.github.johanneshiry.simpleprm.io.DbConnector
 import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
+import com.typesafe.scalalogging.LazyLogging
 import ezvcard.{Ezvcard, VCard}
 import ezvcard.property.Uid
 import reactivemongo.api.MongoConnectionOptions.Credential
@@ -34,7 +35,8 @@ final case class MongoDbConnector(
     db: String
 )(implicit ec: ExecutionContext)
     extends DbConnector
-    with BSONReader {
+    with BSONReader
+    with LazyLogging {
 
   private val driver: AsyncDriver = new reactivemongo.api.AsyncDriver
   private val connection: Future[MongoConnection] = driver.connect(
@@ -81,10 +83,12 @@ final case class MongoDbConnector(
   private val contactByUidSelector = (contact: Contact) =>
     BSONTransformer.transform(contact.uid, Some("_id"))
 
+  // { "$set": { <field1> : <value1>, ... } }
   private val set = (doc: BSONDocument) => BSONDocument("$set" -> doc)
 
+  // { "fieldName" : { $ne: null } }
   private val notNull = (fieldName: String) =>
-    BSONDocument(fieldName -> "{$ne:null}")
+    BSONDocument(fieldName -> BSONDocument("$ne" -> "null"))
 
   private def deleteContacts(
       contacts: Seq[Contact],
@@ -160,9 +164,17 @@ final case class MongoDbConnector(
     // batchSize == 0 -> unspecified batchSize
     val queryBuilder =
       collection.find(notNull("stayInTouch")).batchSize(limit.getOrElse(0))
+
     queryBuilder
       .cursor[MongoDbContact]()
-      .collect[Vector](err = Cursor.FailOnError[Vector[MongoDbContact]]())
+      .collect[Vector](err =
+        Cursor.FailOnError[Vector[MongoDbContact]]((_, throwable) =>
+          logger.error(
+            s"Cannot execute mongo db query '${queryBuilder.toString}'",
+            throwable
+          )
+        )
+      )
       .map(_.flatMap(_.stayInTouch))
   }
 
