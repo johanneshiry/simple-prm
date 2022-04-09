@@ -38,6 +38,9 @@ import scala.jdk.CollectionConverters.*
 
 private[notifier] trait EmailNotifierService extends LazyLogging {
 
+  private val emptyStringAsOption = (s: String) =>
+    if s.isEmpty || s.isBlank then None else Some(s)
+
   def initDelay(runHour: Long): FiniteDuration = {
     val now = ZonedDateTime.now()
     val nowHour = now.getHour
@@ -88,8 +91,9 @@ private[notifier] trait EmailNotifierService extends LazyLogging {
         stayInTouchData.contact.vCard.getFormattedName.getValue,
         stayInTouchData.contact.vCard.getEmails.asScala.headOption
           .map(_.getValue)
+          .flatMap(emptyStringAsOption)
           .getOrElse(
-            s"No E-Mail for contact '${stayInTouchData.contact.vCard.getFormattedName}' found!"
+            s"No E-Mail for contact '${stayInTouchData.contact.vCard.getFormattedName.getValue}' found!"
           )
       )
     )
