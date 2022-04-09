@@ -25,8 +25,14 @@ import emil.javamail.JavaMailEmil
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.{Duration, FiniteDuration, HOURS, MINUTES}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.{
+  Duration,
+  FiniteDuration,
+  HOURS,
+  MINUTES,
+  SECONDS
+}
 import scala.util.{Failure, Success}
 import scala.jdk.CollectionConverters.*
 
@@ -120,8 +126,11 @@ object EmailNotifierService extends EmailNotifierService {
 
   sealed trait EmailNotifierServiceCmd
 
+  // external api
+  /// Run is also used for self triggering
+  case object Run extends EmailNotifierServiceCmd
+
   // internal api
-  private case object Run extends EmailNotifierServiceCmd
 
   private final case class EmailsSend(eMails: Seq[NonEmptyList[String]])
       extends EmailNotifierServiceCmd
