@@ -145,7 +145,10 @@ object EmailNotifierService extends EmailNotifierService {
   private[notifier] final case class StayInTouchData(
       contact: Contact,
       stayInTouch: StayInTouch
-  )
+  ) {
+    def lastContactedToNow: StayInTouch =
+      stayInTouch.copy(lastContacted = ZonedDateTime.now())
+  }
 
   private final case class FindStayInTouchSuccessful(
       entries: Vector[StayInTouchData]
@@ -260,13 +263,22 @@ object EmailNotifierService extends EmailNotifierService {
       stateData: EmailNotifierStateData
   ): Behavior[EmailNotifierServiceCmd] = Behaviors.receivePartial {
     case (ctx, FindStayInTouchSuccessful(stayInTouches)) =>
+      implicit val ec: ExecutionContext = ctx.executionContext
       ctx.pipeToSelf(
         sendMails(
           stateData.config.mailConfig,
           composeEmails(stateData.composer, stayInTouches)
-        )(ctx.executionContext)
+        )(ctx.executionContext).flatMap(eMailStrings =>
+          Future
+            .sequence(
+              stayInTouches
+                .map(_.lastContactedToNow)
+                .map(stateData.config.dbConnector.upsertStayInTouch)
+            )
+            .map(stayInTouchData => (eMailStrings, stayInTouchData))
+        )
       ) {
-        case Success(eMailStrings) =>
+        case Success((eMailStrings, _)) =>
           EmailsSend(eMailStrings)
         case Failure(exception) =>
           EmailSendFailed(exception)
@@ -279,7 +291,10 @@ object EmailNotifierService extends EmailNotifierService {
       )
       idle(stateData)
     case (_, EmailsSend(eMails)) =>
-      logger.info(s"Successfully send ${eMails.size} e-mail notifications!")
+      logger.info(
+        if eMails.isEmpty then "No e-mail notifications sent!"
+        else s"Successfully send ${eMails.size} e-mail notifications!"
+      )
       logger.debug(s"eMails: ${eMails.toList.mkString("\n")}")
       idle(stateData)
     case (_, EmailSendFailed(ex)) =>

@@ -12,4 +12,9 @@ final case class StayInTouch(
     contactId: Uid,
     lastContacted: ZonedDateTime,
     contactInterval: java.time.Duration
-)
+) {
+
+  def lastContactedToNow: StayInTouch =
+    this.copy(lastContacted = ZonedDateTime.now())
+
+}
