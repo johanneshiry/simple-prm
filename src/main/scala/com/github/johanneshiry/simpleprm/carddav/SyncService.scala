@@ -49,7 +49,7 @@ object SyncService extends LazyLogging {
 
   private final case class SyncSuccessful() extends SyncResult
 
-  private final case class SyncFailed() extends SyncResult
+  private final case class SyncFailed(throwable: Throwable) extends SyncResult
 
   // state data
   private final case class StateData(
@@ -116,10 +116,10 @@ object SyncService extends LazyLogging {
           Some(localGetResponse)
         )(ctx)
       case _: SyncSuccessful =>
-        logger.info("Sync successful!") // todo
+        logger.info("CardDav server sync successful!") 
         idle(stateData)
-      case _: SyncFailed =>
-        logger.info("Sync failed!") // todo
+      case SyncFailed(exception) =>
+        logger.info("CardDav server sync failed!", exception)
         idle(stateData)
       case invalid =>
         logger.error(s"Invalid message in sync() received: $invalid")
@@ -158,8 +158,7 @@ object SyncService extends LazyLogging {
           case Success(value) =>
             SyncSuccessful() // todo add parameters
           case Failure(exception) =>
-            logger.error("ex", exception)
-            SyncFailed() // todo add parameters
+            SyncFailed(exception)
         }
         sync(stateData)()
       case (Some(serverGetFailed: ServerGetFailed), _) =>
