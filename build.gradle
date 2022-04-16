@@ -47,6 +47,11 @@ dependencies {
   implementation platform("com.typesafe.akka:akka-bom_2.13:${akkaVersion}")
   testImplementation "com.typesafe.akka:akka-actor-testkit-typed_2.13:${akkaVersion}"
 
+  // akka http cors
+  implementation('ch.megard:akka-http-cors_3:1.1.3') {
+    exclude group: 'com.typesafe.akka'
+  }
+
   // json parsing with circe
   implementation 'de.heikoseeberger:akka-http-circe_2.13:1.40.0-RC1'
   implementation 'io.circe:circe-core_3:0.15.0-M1'
@@ -68,11 +73,12 @@ dependencies {
   implementation 'com.googlecode.ez-vcard:ez-vcard:0.11.3'
 
   // mongo db driver
-  implementation ('org.reactivemongo:reactivemongo_3:1.1.0-noshaded-RC3') {
+  implementation('org.reactivemongo:reactivemongo_3:1.1.0-noshaded-RC3') {
     exclude group: 'org.slf4j'
     exclude group: 'com.typesafe.akka' // uses akka scala 3 otherwise
   }
-  implementation 'io.netty:netty-all:4.1.75.Final' // required by mongo db driver // todo replace by specific required dependendencies
+  implementation 'io.netty:netty-all:4.1.75.Final'
+  // required by mongo db driver // todo replace by specific required dependencies
 
   //  implementation 'io.netty:netty-common:4.1.75.Final' // required by mongo db driver
   //  implementation 'io.netty:netty-transport:4.1.75.Final'

@@ -35,7 +35,11 @@ final case class RestApiV1(
     ec: ExecutionContext
 ) extends RestApi("v1") {
 
-  protected def apiRoute: Route = StayInTouchApi.routes(stayInTouchHandler) ~
-    ContactApi.routes(contactHandler)
+  import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
+
+  protected def apiRoute: Route = cors() { // todo configure + harden cors
+    StayInTouchApi.routes(stayInTouchHandler) ~
+      ContactApi.routes(contactHandler)
+  }
 
 }

@@ -22,6 +22,7 @@ import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
 import akka.http.scaladsl.server.Directives.*
 import com.github.johanneshiry.simpleprm.io.DbConnector
+import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -56,7 +57,7 @@ object ContactApi extends FailFastCirceSupport with MarshalSupport {
       paginatedContacts: PaginatedContacts
   ) extends GetContactsPaginatedResponse(StatusCodes.OK)
 
-  object GetContactsPaginatedResponse {
+  object GetContactsPaginatedResponse extends LazyLogging {
 
     import io.circe.generic.auto._
     import io.circe.syntax._
@@ -72,7 +73,9 @@ object ContactApi extends FailFastCirceSupport with MarshalSupport {
     private implicit def createStayInTouchMarshaller
         : Marshaller[PaginatedContacts, ResponseEntity] =
       Marshaller.strict(paginatedContacts =>
-        Marshalling.Opaque { () => paginatedContacts.asJson.toString }
+        Marshalling.Opaque { () =>
+          paginatedContacts.contacts.asJson.toString
+        }
       )
 
     def getContactsPaginatedResponseTR(
