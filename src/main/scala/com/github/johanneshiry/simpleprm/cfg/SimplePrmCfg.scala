@@ -109,6 +109,7 @@ object SimplePrmCfg {
   )
   object SimplePrm {
     final case class Carddav(
+        disableCertificateCheck: scala.Boolean,
         password: java.lang.String,
         syncInterval: java.time.Duration,
         uri: java.lang.String,
@@ -121,6 +122,8 @@ object SimplePrmCfg {
           $tsCfgValidator: $TsCfgValidator
       ): SimplePrmCfg.SimplePrm.Carddav = {
         SimplePrmCfg.SimplePrm.Carddav(
+          disableCertificateCheck =
+            $_reqBln(parentPath, c, "disableCertificateCheck", $tsCfgValidator),
           password = $_reqStr(parentPath, c, "password", $tsCfgValidator),
           syncInterval =
             if (c.hasPathOrNull("syncInterval")) c.getDuration("syncInterval")
@@ -129,6 +132,22 @@ object SimplePrmCfg {
           username = $_reqStr(parentPath, c, "username", $tsCfgValidator)
         )
       }
+      private def $_reqBln(
+          parentPath: java.lang.String,
+          c: com.typesafe.config.Config,
+          path: java.lang.String,
+          $tsCfgValidator: $TsCfgValidator
+      ): scala.Boolean = {
+        if (c == null) false
+        else
+          try c.getBoolean(path)
+          catch {
+            case e: com.typesafe.config.ConfigException =>
+              $tsCfgValidator.addBadPath(parentPath + path, e)
+              false
+          }
+      }
+
       private def $_reqStr(
           parentPath: java.lang.String,
           c: com.typesafe.config.Config,
