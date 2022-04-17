@@ -44,7 +44,8 @@ object CardDavService extends LazyLogging {
   final case class ConfigParams(
       serverUri: URI,
       username: String,
-      password: String
+      password: String,
+      disableCertificateCheck: Boolean
   )
 
   object ConfigParams {
@@ -53,7 +54,8 @@ object CardDavService extends LazyLogging {
       ConfigParams(
         new URI(cfg.uri),
         cfg.username,
-        cfg.password
+        cfg.password,
+        cfg.disableCertificateCheck
       )
 
   }
@@ -67,7 +69,8 @@ object CardDavService extends LazyLogging {
       SardineClientWrapper(
         configParams.serverUri,
         configParams.username,
-        configParams.password
+        configParams.password,
+        configParams.disableCertificateCheck
       )
     )
 

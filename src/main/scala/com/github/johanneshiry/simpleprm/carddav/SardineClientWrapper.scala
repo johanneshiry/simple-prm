@@ -43,17 +43,23 @@ case object SardineClientWrapper extends LazyLogging {
   def apply(
       serverUri: URI,
       username: String,
-      password: String
-  ): SardineClientWrapper = createClient(serverUri, username, password)
+      password: String,
+      disableCertificateCheck: Boolean
+  ): SardineClientWrapper =
+    createClient(serverUri, username, password, disableCertificateCheck)
 
   private def createClient(
       serverUri: URI,
       username: String,
-      password: String
+      password: String,
+      disableCertificateCheck: Boolean
   ): SardineClientWrapper = {
 
     // todo initial directory list to ensure that the server can be reached with provided url and credentials
-    val sardine = createSecureClient(username, password)
+    val sardine =
+      if (disableCertificateCheck)
+        createUnsecureClient(serverUri, username, password)
+      else createSecureClient(username, password)
     SardineClientWrapper(serverUri, sardine)
   }
 
