@@ -84,21 +84,23 @@ object CardDavService extends LazyLogging {
       request match {
         case Get(replyTo) =>
           logger.info(
-            s"Getting contacts from CardDav server '${stateData.client.serverUri}' ...'"
+            s"Getting contacts from CardDav server '${stateData.client.serverUri}'...'"
           )
           stateData.client.listDir.map(
-            _.par.flatMap(davResource =>
-              getAsVCard(davResource, stateData.client) match {
-                case Failure(exception) =>
-                  logger.error(
-                    s"Cannot read vCard from Dav resource '${davResource.davResource.getName}'!",
-                    exception
-                  )
-                  Seq.empty
-                case Success(vCards) =>
-                  vCards
-              }
-            )
+            _.par
+              .flatMap(davResource =>
+                getAsVCard(davResource, stateData.client) match {
+                  case Failure(exception) =>
+                    logger.error(
+                      s"Cannot read vCard from Dav resource '${davResource.davResource.getName}'!",
+                      exception
+                    )
+                    Seq.empty
+                  case Success(vCards) =>
+                    vCards
+                }
+              )
+              .distinct
           ) match {
             case Failure(exception) =>
               logger.error(
@@ -111,7 +113,7 @@ object CardDavService extends LazyLogging {
                 s"Successfully received ${serverContacts.size} contacts from CardDav server!"
               )
               replyTo ! GetSuccessful(
-                serverContacts.distinct.seq.map(Contact.apply)
+                serverContacts.seq.map(Contact.apply)
               )
           }
           Behaviors.same

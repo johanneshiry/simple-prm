@@ -83,7 +83,8 @@ private[mongodb] object MongoDbModel {
         tryAsOpt(vCard.getStructuredName.getGiven)
       )
 
-    private def tryAsOpt[X](x: () => X): Option[X] = Try(x.apply).toOption
+    private def tryAsOpt[X](x: () => X): Option[X] =
+      Try(Option(x.apply)).toOption.flatten
   }
 
 }
