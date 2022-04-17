@@ -6,8 +6,8 @@ package com.github.johanneshiry.simpleprm.api.rest.routes.v1
 
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.server.Directives.{
-  pathPrefix,
-  _enhanceRouteWithConcatenation
+  _enhanceRouteWithConcatenation,
+  pathPrefix
 }
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.{Http, ServerBuilder}
@@ -37,9 +37,10 @@ final case class RestApiV1(
 
   import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 
-  protected def apiRoute: Route = cors() { // todo configure + harden cors
-    StayInTouchApi.routes(stayInTouchHandler) ~
-      ContactApi.routes(contactHandler)
-  }
+  protected def apiRoute: Route =
+    cors() { // todo configure + handle rejections (https://github.com/lomigmegard/akka-http-cors/issues/1) + harden cors
+      StayInTouchApi.routes(stayInTouchHandler) ~
+        ContactApi.routes(contactHandler)
+    }
 
 }
