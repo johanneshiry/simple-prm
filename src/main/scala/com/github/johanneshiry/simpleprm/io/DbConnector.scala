@@ -34,14 +34,17 @@ trait DbConnector {
 
 object DbConnector {
 
+  enum SortableField:
+    case FN
+
   // very simple implementation of sorting, default sorting is considered to be ascending
-  final case class SortBy(fieldName: String, desc: Boolean = false)
+  final case class SortBy(fieldName: SortableField, desc: Boolean = false)
 
   object SortBy {
     def apply(fieldName: String, order: String): Try[SortBy] =
       order.trim.toLowerCase match {
-        case "desc" => Success(SortBy(fieldName, true))
-        case "asc"  => Success(SortBy(fieldName))
+        case "desc" => Try(SortBy(SortableField.valueOf(fieldName), true))
+        case "asc"  => Try(SortBy(SortableField.valueOf(fieldName)))
         case invalid =>
           Failure(
             new IllegalArgumentException(

@@ -6,6 +6,7 @@ package com.github.johanneshiry.simpleprm.io.mongodb
 
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbModel.Contact as MongoDbContact
+import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbModel.VCard as MongoDbVCard
 import com.github.johanneshiry.simpleprm.io.mongodb.{
   BSONReader,
   BSONTransformer
@@ -109,15 +110,15 @@ final case class MongoDbConnector(
     val updateBuilder = collection.update(ordered = true)
 
     // only the vCard needs to be updated
-    val modifierFunc = (contact: Contact) =>
-      set(BSONTransformer.transform(contact.vCard, Some("vCard")))
+    val modifierFunc = (vCard: MongoDbVCard) =>
+      set(BSONTransformer.transform(vCard, Some("vCard")))
 
     // q = selector, u = modifier
     val updates = Future.sequence(
       contacts.map(contact =>
         updateBuilder.element(
           q = contactByUidSelector(contact),
-          u = modifierFunc(contact),
+          u = modifierFunc(MongoDbVCard(contact)),
           upsert = true
         )
       )
@@ -135,15 +136,16 @@ final case class MongoDbConnector(
     val queryBuilder =
       collection
         .find(BSONDocument())
-        .batchSize(limit.getOrElse(defaultBatchSize))
+        .batchSize(limit.getOrElse(Int.MaxValue))
         .skip(offset.getOrElse(defaultOffsetNo))
         .sort(sortBy(sortOrder))
     queryBuilder
-      .cursor[Contact]()
+      .cursor[MongoDbContact]()
       .collect[Vector](
-        maxDocs = limit.getOrElse(defaultBatchSize),
-        err = Cursor.FailOnError[Vector[Contact]]()
+        maxDocs = limit.getOrElse(Int.MaxValue),
+        err = Cursor.FailOnError[Vector[MongoDbContact]]()
       )
+      .map(_.map(mongoDbContact => Contact(mongoDbContact.vCard.value)))
   }
 
   private def upsertStayInTouch(

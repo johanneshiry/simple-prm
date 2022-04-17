@@ -6,9 +6,10 @@ package com.github.johanneshiry.simpleprm.io.mongodb
 
 import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbModel.Contact as MongoDbContact
+import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbModel.VCard as MongoDbVCard
 import ezvcard.property.Uid
 import ezvcard.{Ezvcard, VCard}
-import reactivemongo.api.bson.BSONDocumentReader
+import reactivemongo.api.bson.{BSONDocument, BSONDocumentReader}
 
 import java.time.{Duration, ZonedDateTime}
 import scala.util.Try
@@ -44,10 +45,10 @@ private[mongodb] trait BSONReader {
           stayInTouchReader
         )
         vCard <- bson
-          .getAsTry[String]("vCard")
-          .map(vCardString => Ezvcard.parse(vCardString).first())
+          .getAsTry[BSONDocument]("vCard")
+          .flatMap(_.getAsTry[String]("value"))
+          .map(vCardString => MongoDbVCard(Ezvcard.parse(vCardString).first()))
         mongoDbContact <- MongoDbContact(vCard, stayInTouch)
       } yield mongoDbContact
     }
-
 }
