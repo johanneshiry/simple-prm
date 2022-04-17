@@ -13,11 +13,13 @@ import com.typesafe.scalalogging.LazyLogging
 import ezvcard.VCard
 import ezvcard.io.text.VCardReader
 
+import scala.util.Using
 import java.io.InputStream
 import java.net.URI
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
+import scala.collection.parallel.CollectionConverters.*
 
 object CardDavService extends LazyLogging {
 
@@ -85,7 +87,7 @@ object CardDavService extends LazyLogging {
             s"Getting contacts from CardDav server '${stateData.client.serverUri}' ...'"
           )
           stateData.client.listDir.map(
-            _.flatMap(davResource =>
+            _.par.flatMap(davResource =>
               getAsVCard(davResource, stateData.client) match {
                 case Failure(exception) =>
                   logger.error(
@@ -108,7 +110,9 @@ object CardDavService extends LazyLogging {
               logger.info(
                 s"Successfully received ${serverContacts.size} contacts from CardDav server!"
               )
-              replyTo ! GetSuccessful(serverContacts.map(Contact.apply))
+              replyTo ! GetSuccessful(
+                serverContacts.distinct.seq.map(Contact.apply)
+              )
           }
           Behaviors.same
       }
@@ -118,8 +122,9 @@ object CardDavService extends LazyLogging {
       davResourceWrapper: DavResourceWrapper,
       sardineClientWrapper: SardineClientWrapper
   ): Try[Seq[VCard]] =
-    Try(sardineClientWrapper.sardine.get(davResourceWrapper.fullPath))
-      .flatMap(readVCard)
+    Using(sardineClientWrapper.sardine.get(davResourceWrapper.fullPath))(
+      readVCard
+    ).flatten
 
   // potential for parallelization -> concat multiple input streams into one and create worker actors
   private def readVCard(vCardStream: InputStream): Try[Seq[VCard]] =

@@ -79,7 +79,7 @@ object SyncService extends LazyLogging {
       msg match {
         case Sync =>
           logger.info("Syncing contacts with server ...")
-          implicit val timeout: Timeout = 10.seconds
+          implicit val timeout: Timeout = 10000.seconds
           ctx.ask(stateData.cardDavService, CardDavService.Get.apply) {
             case Success(GetSuccessful(serverContacts)) =>
               ServerGetSuccessful(serverContacts)
