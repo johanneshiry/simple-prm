@@ -4,7 +4,7 @@
 
 package com.github.johanneshiry.simpleprm.io.mongodb
 
-import com.github.johanneshiry.simpleprm.io.DbConnector.SortyBy
+import com.github.johanneshiry.simpleprm.io.DbConnector.SortBy
 import com.github.johanneshiry.simpleprm.io.model.Contact
 import reactivemongo.api.bson.BSONDocument
 
@@ -26,8 +26,8 @@ private[mongodb] object MongoDbFunctions {
   val notNull: String => BSONDocument = (fieldName: String) =>
     BSONDocument(fieldName -> BSONDocument("$ne" -> "null"))
 
-  val sortBy: Option[SortyBy] => BSONDocument =
-    (maybeSortBy: Option[SortyBy]) =>
+  val sortBy: Option[SortBy] => BSONDocument =
+    (maybeSortBy: Option[SortBy]) =>
       maybeSortBy match {
         case Some(sortBy) =>
           BSONDocument(sortBy.fieldName -> {

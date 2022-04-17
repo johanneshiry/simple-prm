@@ -11,7 +11,7 @@ import com.github.johanneshiry.simpleprm.io.mongodb.{
   BSONTransformer
 }
 import com.github.johanneshiry.simpleprm.io.DbConnector
-import com.github.johanneshiry.simpleprm.io.DbConnector.SortyBy
+import com.github.johanneshiry.simpleprm.io.DbConnector.SortBy
 import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbFunctions.*
 import com.typesafe.scalalogging.LazyLogging
@@ -49,7 +49,7 @@ final case class MongoDbConnector(
   def getContacts(
       limit: Option[Int] = None,
       offset: Option[Int] = None,
-      sortBy: Option[SortyBy] = None
+      sortBy: Option[SortBy] = None
   ): Future[Vector[Contact]] =
     contactsCollection.flatMap(findContacts(_, limit, offset, sortBy))
 
@@ -129,7 +129,7 @@ final case class MongoDbConnector(
       collection: BSONCollection,
       limit: Option[Int] = None,
       offset: Option[Int] = None,
-      sortOrder: Option[SortyBy] = None
+      sortOrder: Option[SortBy] = None
   ): Future[Vector[Contact]] = {
     // batchSize == 0 -> unspecified batchSize
     val queryBuilder =

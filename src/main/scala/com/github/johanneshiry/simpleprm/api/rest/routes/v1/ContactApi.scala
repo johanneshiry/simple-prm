@@ -16,17 +16,24 @@ import akka.http.scaladsl.model.{
   StatusCode,
   StatusCodes
 }
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{
+  MalformedQueryParamRejection,
+  MissingQueryParamRejection,
+  Rejection,
+  Route
+}
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.GetContactsPaginatedResponse.PaginatedContacts
 import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
 import akka.http.scaladsl.server.Directives.*
+import akka.http.scaladsl.server.RouteResult.Rejected
 import com.github.johanneshiry.simpleprm.io.DbConnector
-import com.github.johanneshiry.simpleprm.io.DbConnector.SortyBy
+import com.github.johanneshiry.simpleprm.io.DbConnector.SortBy
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object ContactApi extends FailFastCirceSupport with MarshalSupport {
 
@@ -35,7 +42,7 @@ object ContactApi extends FailFastCirceSupport with MarshalSupport {
     def getContacts(
         limit: Option[Int] = None,
         offset: Option[Int] = None,
-        sortBy: Option[SortyBy] = None
+        sortBy: Option[SortBy] = None
     ): Future[GetContactsPaginatedResponse]
   }
 
@@ -46,7 +53,7 @@ object ContactApi extends FailFastCirceSupport with MarshalSupport {
       def getContacts(
           limit: Option[Int] = None,
           offset: Option[Int] = None,
-          sortBy: Option[SortyBy] = None
+          sortBy: Option[SortBy] = None
       ): Future[GetContactsPaginatedResponse] = dbConnector
         .getContacts(limit, offset, sortBy)
         .map(contacts =>
@@ -97,12 +104,44 @@ object ContactApi extends FailFastCirceSupport with MarshalSupport {
     pathPrefix("get") {
       path("page") {
         get {
-          parameters("limit".as[Int].?, "offset".as[Int].?) { (limit, offset) =>
-            complete(handler.getContacts(limit, offset))
+          parameters(
+            "limit".as[Int].?,
+            "offset".as[Int].?,
+            "sort_by".as[String].?,
+            "order_by".as[String].?
+          ) { (limit, offset, sortBy, orderBy) =>
+            parameterCheck(sortBy, orderBy) match {
+              case (Some(rejection), None) =>
+                reject(rejection)
+              case (None, Some(sortBy, orderBy)) =>
+                SortBy(sortBy, orderBy) match {
+                  case Failure(ex) =>
+                    reject(
+                      MalformedQueryParamRejection("order_by", ex.getMessage)
+                    )
+                  case sortBySuc @ Success(_) =>
+                    complete(
+                      handler.getContacts(limit, offset, sortBySuc.toOption)
+                    )
+                }
+              case (_, _) =>
+                complete(handler.getContacts(limit, offset))
+            }
           }
         }
       }
     }
+  }
+
+  private def parameterCheck(
+      sortBy: Option[String],
+      orderBy: Option[String]
+  ): (Option[Rejection], Option[(String, String)]) = {
+    if (sortBy.isDefined && orderBy.isEmpty) {
+      (Some(MissingQueryParamRejection("order_by")), None)
+    } else if (sortBy.isEmpty && orderBy.isDefined) {
+      (Some(MissingQueryParamRejection("sort_by")), None)
+    } else (None, sortBy.zip(orderBy))
   }
 
 }
