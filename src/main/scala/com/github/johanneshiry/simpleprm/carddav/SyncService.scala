@@ -116,7 +116,7 @@ object SyncService extends LazyLogging {
           Some(localGetResponse)
         )(ctx)
       case _: SyncSuccessful =>
-        logger.info("CardDav server sync successful!") 
+        logger.info("CardDav server sync successful!")
         idle(stateData)
       case SyncFailed(exception) =>
         logger.info("CardDav server sync failed!", exception)

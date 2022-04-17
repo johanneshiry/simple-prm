@@ -22,6 +22,7 @@ import com.github.johanneshiry.simpleprm.io.model.Contact
 import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
 import akka.http.scaladsl.server.Directives.*
 import com.github.johanneshiry.simpleprm.io.DbConnector
+import com.github.johanneshiry.simpleprm.io.DbConnector.SortyBy
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
@@ -32,7 +33,9 @@ object ContactApi extends FailFastCirceSupport with MarshalSupport {
   // handler interface containing all methods supported by the api
   trait ContactHandler {
     def getContacts(
-        limit: Option[Int] = None
+        limit: Option[Int] = None,
+        offset: Option[Int] = None,
+        sortBy: Option[SortyBy] = None
     ): Future[GetContactsPaginatedResponse]
   }
 
@@ -41,9 +44,11 @@ object ContactApi extends FailFastCirceSupport with MarshalSupport {
         ec: ExecutionContext
     ) extends ContactApi.ContactHandler {
       def getContacts(
-          limit: Option[Int] = None
+          limit: Option[Int] = None,
+          offset: Option[Int] = None,
+          sortBy: Option[SortyBy] = None
       ): Future[GetContactsPaginatedResponse] = dbConnector
-        .getContacts(limit)
+        .getContacts(limit, offset, sortBy)
         .map(contacts =>
           GetContactsPaginatedResponseOK(PaginatedContacts(contacts))
         )
@@ -92,8 +97,8 @@ object ContactApi extends FailFastCirceSupport with MarshalSupport {
     pathPrefix("get") {
       path("page") {
         get {
-          parameters("limit".as[Int].?) { limit =>
-            complete(handler.getContacts(limit))
+          parameters("limit".as[Int].?, "offset".as[Int].?) { (limit, offset) =>
+            complete(handler.getContacts(limit, offset))
           }
         }
       }

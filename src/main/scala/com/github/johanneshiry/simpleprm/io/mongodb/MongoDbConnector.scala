@@ -11,7 +11,9 @@ import com.github.johanneshiry.simpleprm.io.mongodb.{
   BSONTransformer
 }
 import com.github.johanneshiry.simpleprm.io.DbConnector
+import com.github.johanneshiry.simpleprm.io.DbConnector.SortyBy
 import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
+import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbFunctions.*
 import com.typesafe.scalalogging.LazyLogging
 import ezvcard.{Ezvcard, VCard}
 import ezvcard.property.Uid
@@ -44,8 +46,12 @@ final case class MongoDbConnector(
     options = options
   )
 
-  def getContacts(limit: Option[Int] = None): Future[Vector[Contact]] =
-    contactsCollection.flatMap(findContacts(_, limit))
+  def getContacts(
+      limit: Option[Int] = None,
+      offset: Option[Int] = None,
+      sortBy: Option[SortyBy] = None
+  ): Future[Vector[Contact]] =
+    contactsCollection.flatMap(findContacts(_, limit, offset, sortBy))
 
   def getAllContacts: Future[Vector[Contact]] =
     contactsCollection.flatMap(findContacts(_))
@@ -79,16 +85,6 @@ final case class MongoDbConnector(
 
   private def dbConnection: Future[DB] =
     connection.flatMap(_.database(db))
-
-  private val contactByUidSelector = (contact: Contact) =>
-    BSONTransformer.transform(contact.uid, Some("_id"))
-
-  // { "$set": { <field1> : <value1>, ... } }
-  private val set = (doc: BSONDocument) => BSONDocument("$set" -> doc)
-
-  // { "fieldName" : { $ne: null } }
-  private val notNull = (fieldName: String) =>
-    BSONDocument(fieldName -> BSONDocument("$ne" -> "null"))
 
   private def deleteContacts(
       contacts: Seq[Contact],
@@ -131,14 +127,23 @@ final case class MongoDbConnector(
 
   private def findContacts(
       collection: BSONCollection,
-      limit: Option[Int] = None
+      limit: Option[Int] = None,
+      offset: Option[Int] = None,
+      sortOrder: Option[SortyBy] = None
   ): Future[Vector[Contact]] = {
     // batchSize == 0 -> unspecified batchSize
     val queryBuilder =
-      collection.find(BSONDocument()).batchSize(limit.getOrElse(0))
+      collection
+        .find(BSONDocument())
+        .batchSize(limit.getOrElse(defaultBatchSize))
+        .skip(offset.getOrElse(defaultOffsetNo))
+        .sort(sortBy(sortOrder))
     queryBuilder
       .cursor[Contact]()
-      .collect[Vector](err = Cursor.FailOnError[Vector[Contact]]())
+      .collect[Vector](
+        maxDocs = limit.getOrElse(defaultBatchSize),
+        err = Cursor.FailOnError[Vector[Contact]]()
+      )
   }
 
   private def upsertStayInTouch(

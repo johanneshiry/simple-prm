@@ -4,6 +4,7 @@
 
 package com.github.johanneshiry.simpleprm.io
 
+import com.github.johanneshiry.simpleprm.io.DbConnector.SortyBy
 import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
 import ezvcard.VCard
 import ezvcard.property.Uid
@@ -13,7 +14,11 @@ import scala.util.Try
 
 trait DbConnector {
 
-  def getContacts(limit: Option[Int] = None): Future[Vector[Contact]]
+  def getContacts(
+      limit: Option[Int] = None,
+      offset: Option[Int] = None,
+      sortBy: Option[SortyBy] = None
+  ): Future[Vector[Contact]]
 
   def getAllContacts: Future[Vector[Contact]]
 
@@ -24,5 +29,12 @@ trait DbConnector {
   def upsertStayInTouch(stayInTouch: StayInTouch): Future[StayInTouch]
 
   def getAllStayInTouch: Future[Vector[StayInTouch]]
+
+}
+
+object DbConnector {
+
+  // very simple implementation of sorting, default sorting is considered to be ascending
+  final case class SortyBy(fieldName: String, desc: Boolean = false)
 
 }
