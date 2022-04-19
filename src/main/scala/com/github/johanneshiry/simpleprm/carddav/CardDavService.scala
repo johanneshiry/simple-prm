@@ -124,12 +124,11 @@ object CardDavService extends LazyLogging {
       davResourceWrapper: DavResourceWrapper,
       sardineClientWrapper: SardineClientWrapper
   ): Try[Seq[VCard]] =
-    Using(sardineClientWrapper.sardine.get(davResourceWrapper.fullPath))(
-      readVCard
-    ).flatten
-
-  // potential for parallelization -> concat multiple input streams into one and create worker actors
-  private def readVCard(vCardStream: InputStream): Try[Seq[VCard]] =
-    Try(new VCardReader(vCardStream).readAll().asScala.toSeq)
-
+    Using.Manager { use =>
+      // potential for parallelization -> concat multiple input streams into one and create worker actors
+      val vCardStream =
+        use(sardineClientWrapper.sardine.get(davResourceWrapper.fullPath))
+      val reader = use(new VCardReader(vCardStream))
+      reader.readAll().asScala.toSeq
+    }
 }
