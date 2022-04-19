@@ -25,8 +25,7 @@ final case class Contact private (uid: Uid, vCard: VCard)
 
 object Contact {
 
-  // setting the uid to lowercase is required to stay consistent, as sometimes its uppercase, sometimes its lowercase
   def apply(vCard: VCard): Contact =
-    new Contact(new Uid(vCard.getUid.toString.toLowerCase), vCard)
+    new Contact(vCard.getUid, vCard)
 
 }

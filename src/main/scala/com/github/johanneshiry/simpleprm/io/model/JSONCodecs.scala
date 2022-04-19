@@ -12,6 +12,7 @@ import io.circe.syntax.*
 import scala.language.implicitConversions
 import scala.util.Try
 
+// todo remove field names as not required
 object JSONCodecs {
 
   // ezvcard.property.Uid
@@ -19,8 +20,9 @@ object JSONCodecs {
     (a: Uid) => Json.fromString(a.getValue)
 
   implicit def decUid(fieldName: String): Decoder[Uid] =
-    Decoder.decodeUUID.emapTry { uuid =>
-      Try(new Uid(uuid.toString))
+    Decoder.decodeString.emapTry {
+      uidString => // Decoder.decodeUUID alters uuid, therefore we need decodeString here
+        Try(new Uid(uidString))
     }
 
   // ezvcard.VCard

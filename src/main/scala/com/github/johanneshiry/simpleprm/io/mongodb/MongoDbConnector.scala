@@ -31,6 +31,9 @@ import reactivemongo.api.*
 import java.time.{Duration, ZonedDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
+import reactivemongo.api.commands.WriteResult
+
+import scala.concurrent.impl.Promise
 
 final case class MongoDbConnector(
     nodes: Seq[String],
@@ -75,7 +78,10 @@ final case class MongoDbConnector(
     val handleMe = contactsCollection.flatMap(
       upsertStayInTouch(stayInTouch, _)
     )
-    handleMe.map(_ => stayInTouch) // todo handle errors
+    handleMe.map(writeResult => {
+      logger.debug(s"Upsert StayInTouch result: $writeResult")
+      stayInTouch
+    }) // todo process errors correctly
   }
 
   def getAllStayInTouch: Future[Vector[StayInTouch]] =
@@ -151,7 +157,7 @@ final case class MongoDbConnector(
   private def upsertStayInTouch(
       stayInTouch: StayInTouch,
       collection: BSONCollection
-  ) = {
+  ): Future[WriteResult] = {
 
     val selector = BSONTransformer.transform(stayInTouch.contactId, Some("_id"))
 
@@ -160,7 +166,9 @@ final case class MongoDbConnector(
       BSONTransformer.transform(stayInTouch, Some("stayInTouch"))
     )
 
-    collection.update.one(selector, modifier, upsert = true)
+    // do not set upsert to true, as otherwise a stay in touch element is created as document!
+    // the executed operation however is still an upsert within a contact if the contact exists!
+    collection.update.one(selector, modifier, upsert = false)
 
   }
 

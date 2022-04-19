@@ -20,14 +20,13 @@ final case class StayInTouch private (
 }
 object StayInTouch {
 
-  // setting the uid to lowercase is required to stay consistent, as sometimes its uppercase, sometimes its lowercase
   def apply(
       contactId: Uid,
       lastContacted: ZonedDateTime,
       contactInterval: Duration
   ): StayInTouch =
     new StayInTouch(
-      new Uid(contactId.getValue.toLowerCase),
+      contactId,
       lastContacted,
       contactInterval
     )
