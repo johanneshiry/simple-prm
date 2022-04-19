@@ -147,7 +147,7 @@ object EmailNotifierService extends EmailNotifierService {
       stayInTouch: StayInTouch
   ) {
     def lastContactedToNow: StayInTouch =
-      stayInTouch.copy(lastContacted = ZonedDateTime.now())
+      stayInTouch.lastContactedToNow
   }
 
   private final case class FindStayInTouchSuccessful(
