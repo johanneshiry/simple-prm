@@ -19,10 +19,7 @@ import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.{
   ContactHandler,
   GetContactsPaginatedResponseOK
 }
-import com.github.johanneshiry.simpleprm.api.rest.routes.v1.StayInTouchApi.{
-  CreateStayInTouchResponseOK,
-  StayInTouchHandler
-}
+import com.github.johanneshiry.simpleprm.api.rest.routes.v1.StayInTouchApi.StayInTouchHandler
 import com.github.johanneshiry.simpleprm.io.model.StayInTouch
 import com.typesafe.scalalogging.LazyLogging
 
