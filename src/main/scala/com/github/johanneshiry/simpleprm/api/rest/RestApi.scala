@@ -10,6 +10,7 @@ import akka.http.scaladsl.model.StatusCodes.InternalServerError
 import akka.http.scaladsl.{Http, HttpExt, ServerBuilder}
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.http.scaladsl.server.Directives.*
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
@@ -17,7 +18,7 @@ import scala.concurrent.duration.FiniteDuration
 private[rest] abstract class RestApi(version: String)(implicit
     actorSystem: ActorSystem[Nothing],
     ec: ExecutionContext
-) {
+) extends LazyLogging {
 
   protected def apiRoute: Route
 
@@ -29,9 +30,9 @@ private[rest] abstract class RestApi(version: String)(implicit
     }
   }
 
-  val exceptionHandler: ExceptionHandler = ExceptionHandler { case _ =>
+  val exceptionHandler: ExceptionHandler = ExceptionHandler { case e =>
     extractUri { uri =>
-      println(s"Request to $uri could not be handled normally")
+      logger.error(s"Request to $uri could not be handled normally!", e)
       complete(
         HttpResponse(InternalServerError, entity = "Bad numbers, bad result!!!")
       )
