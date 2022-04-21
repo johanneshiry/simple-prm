@@ -1,8 +1,11 @@
+import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
+
 plugins {
   id 'java' //java support
   id 'scala'
   id 'com.diffplug.spotless' version '6.2.1'
   id "de.undercouch.download" version "4.1.2" // downloads plugin
+  id "com.github.johnrengelman.shadow" version "7.1.0" // fat jar
 }
 
 ext {
@@ -100,4 +103,11 @@ tasks.withType(JavaCompile) {
 
 tasks.withType(Javadoc) {
   options.encoding = 'UTF-8'
+}
+
+shadowJar {
+  transform(AppendingTransformer) {
+    resource = 'reference.conf'
+  }
+  zip64 = true
 }
