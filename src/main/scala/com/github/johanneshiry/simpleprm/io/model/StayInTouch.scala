@@ -8,7 +8,7 @@ import ezvcard.property.Uid
 
 import java.time.{Duration, ZonedDateTime}
 
-final case class StayInTouch private (
+final case class StayInTouch private ( // todo rename + different subclasses!
     contactId: Uid,
     lastContacted: ZonedDateTime,
     contactInterval: java.time.Duration

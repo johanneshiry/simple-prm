@@ -23,9 +23,14 @@ import scala.language.postfixOps
 
 trait MarshalSupport {
 
-  val emptyHttpJsonResponse: HttpEntity.Strict = HttpEntity.Strict(
+  val emptyHttpJsonObjResponse: HttpEntity.Strict = HttpEntity.Strict(
     ContentTypes.`application/json`,
     data = ByteString.fromString("{}")
+  )
+
+  val emptyHttpJsonArrayResponse: HttpEntity.Strict = HttpEntity.Strict(
+    ContentTypes.`application/json`,
+    data = ByteString.fromString("[]")
   )
 
   def marshal[T](value: T, statusCode: StatusCode)(implicit
@@ -43,7 +48,7 @@ trait MarshalSupport {
 
   def marshal(
       statusCode: StatusCode,
-      entity: ResponseEntity = emptyHttpJsonResponse
+      entity: ResponseEntity = emptyHttpJsonObjResponse
   )(implicit
       ec: ExecutionContext
   ): Future[List[Marshalling.Opaque[HttpResponse]]] =

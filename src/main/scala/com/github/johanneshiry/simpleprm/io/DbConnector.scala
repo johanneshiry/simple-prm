@@ -30,7 +30,9 @@ trait DbConnector {
 
   def getAllStayInTouch: Future[Vector[StayInTouch]]
 
-  def getStayInTouch(contactUid: Uid): Future[Option[StayInTouch]]
+  def getStayInTouch(
+      contactUid: Uid
+  ): Future[Option[StayInTouch]] // todo may be multiples -> switch to vector
 
 }
 

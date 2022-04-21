@@ -28,7 +28,7 @@ import akka.util.ByteString
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.StayInTouchApi.CreateStayInTouchResponse.CreateStayInTouchResponseOK
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.StayInTouchApi.GetReminderResponse.{
   GetReminderResponseNoContent,
-  GetReminderResponseOK
+  GetRemindersResponseOK
 }
 import com.github.johanneshiry.simpleprm.io.DbConnector
 import com.github.johanneshiry.simpleprm.io.model.{JSONCodecs, StayInTouch}
@@ -86,7 +86,7 @@ object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
       def getReminder(contactUid: Uid): Future[GetReminderResponse] =
         dbConnector.getStayInTouch(contactUid).map {
           case Some(reminder) =>
-            GetReminderResponseOK(reminder)
+            GetRemindersResponseOK(Vector(reminder))
           case None =>
             GetReminderResponseNoContent
         }
@@ -128,13 +128,13 @@ object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
   sealed abstract class GetReminderResponse(val statusCode: StatusCode)
 
   object GetReminderResponse {
-    final case class GetReminderResponseOK(value: StayInTouch)
+    final case class GetRemindersResponseOK(value: Vector[StayInTouch])
         extends GetReminderResponse(StatusCodes.OK)
 
     case object GetReminderResponseNoContent
-        extends GetReminderResponse(StatusCodes.NotFound)
+        extends GetReminderResponse(StatusCodes.OK)
 
-    implicit def getReminderResponseTRM
+    implicit def getRemindersResponseTRM
         : ToResponseMarshaller[GetReminderResponse] = Marshaller {
       implicit ec => resp => createResponseTR(resp)
     }
@@ -142,8 +142,8 @@ object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
     import io.circe.syntax._
     import scala.language.postfixOps
 
-    implicit def getReminderMarshaller
-        : Marshaller[StayInTouch, ResponseEntity] =
+    implicit def getRemindersMarshaller
+        : Marshaller[Vector[StayInTouch], ResponseEntity] =
       Marshaller.strict(stayInTouch =>
         Marshalling.Opaque { () => stayInTouch.asJson.toString }
       )
@@ -152,10 +152,10 @@ object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
         getReminderResp: GetReminderResponse
     )(implicit ec: ExecutionContext): Future[List[Marshalling[HttpResponse]]] =
       getReminderResp match {
-        case c @ GetReminderResponseOK(stayInTouch) =>
+        case c @ GetRemindersResponseOK(stayInTouch) =>
           marshal(stayInTouch, c.statusCode)
         case c @ GetReminderResponseNoContent =>
-          marshal(c.statusCode)
+          marshal(c.statusCode, emptyHttpJsonArrayResponse)
       }
 
   }
