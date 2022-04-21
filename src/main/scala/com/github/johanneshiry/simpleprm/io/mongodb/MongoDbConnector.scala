@@ -30,7 +30,7 @@ import reactivemongo.api.*
 
 import java.time.{Duration, ZonedDateTime}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 import reactivemongo.api.commands.WriteResult
 
 import scala.concurrent.impl.Promise
@@ -86,6 +86,9 @@ final case class MongoDbConnector(
 
   def getAllStayInTouch: Future[Vector[StayInTouch]] =
     contactsCollection.flatMap(findStayInTouch(_))
+
+  def getStayInTouch(contactUid: Uid): Future[Option[StayInTouch]] =
+    contactsCollection.flatMap(findStayInTouch(_, contactUid))
 
   private def contactsCollection: Future[BSONCollection] =
     dbConnection.map(_.collection("contacts"))
@@ -191,6 +194,16 @@ final case class MongoDbConnector(
         )
       )
       .map(_.flatMap(_.stayInTouch))
+  }
+
+  private def findStayInTouch(
+      collection: BSONCollection,
+      contactUid: Uid
+  ): Future[Option[StayInTouch]] = {
+    // query reminder by contact uid
+    val query =
+      BSONTransformer.transform(contactUid, Some("stayInTouch.contactId"))
+    collection.find(query).one[MongoDbContact].map(_.flatMap(_.stayInTouch))
   }
 
 }
