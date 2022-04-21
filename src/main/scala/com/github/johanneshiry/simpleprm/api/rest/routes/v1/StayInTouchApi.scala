@@ -49,7 +49,7 @@ object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
   )
 
   def routes(handler: StayInTouchHandler): Route =
-    pathPrefix("stayInTouch") { // todo switch to "reminder"
+    pathPrefix("reminder") {
       post(
         entity(as[StayInTouch]) { stayInTouch =>
           complete(handler.createStayInTouch(stayInTouch))
