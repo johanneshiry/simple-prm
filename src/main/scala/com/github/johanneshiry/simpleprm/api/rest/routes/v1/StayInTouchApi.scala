@@ -74,14 +74,6 @@ object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
         }
     }
 
-  // java uuid converts to lowercase, which is in fact valid according to the spec,
-  // but is not valid for uid's and therefore we need to keep upper cases if provided :-(
-  private def pathByUuid =
-    (handlerAction: Uid => Future[GetReminderResponse]) =>
-      path(uuidMatcher) { uuid =>
-        complete(handlerAction(new Uid(uuid)))
-      }
-
   // handler interface containing all methods supported by the api
   trait StayInTouchHandler {
     def createStayInTouch(
