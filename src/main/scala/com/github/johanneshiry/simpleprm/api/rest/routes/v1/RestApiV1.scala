@@ -5,6 +5,7 @@
 package com.github.johanneshiry.simpleprm.api.rest.routes.v1
 
 import akka.actor.typed.ActorSystem
+import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.server.Directives.{
   _enhanceRouteWithConcatenation,
   pass,
@@ -13,6 +14,7 @@ import akka.http.scaladsl.server.Directives.{
 import akka.http.scaladsl.server.directives.BasicDirectives.extractRequest
 import akka.http.scaladsl.server.{Directive0, Route}
 import akka.http.scaladsl.{Http, ServerBuilder}
+import akka.util.ByteString
 import com.github.johanneshiry.simpleprm.api.rest.RestApi
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.GetContactsPaginatedResponse.PaginatedContacts
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.{
@@ -25,6 +27,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 final case class RestApiV1(
     httpServer: ServerBuilder,
@@ -47,8 +50,18 @@ final case class RestApiV1(
     }
 
   private def debugLogging: Directive0 = {
+    def requestEntityLoggingFunction(req: HttpRequest): Future[String] = {
+      import scala.concurrent.duration.*
+      val timeout = 900.millis
+      val bodyAsBytes: Future[ByteString] =
+        req.entity.toStrict(timeout).map(_.data)
+      val bodyAsString: Future[String] = bodyAsBytes.map(_.utf8String)
+      bodyAsString
+    }
+
     extractRequest.flatMap { request =>
       logger.debug(s"Received request: $request")
+      requestEntityLoggingFunction(request).map(body => logger.debug(body))
       pass
     }
   }
