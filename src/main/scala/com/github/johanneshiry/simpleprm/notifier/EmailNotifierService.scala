@@ -121,8 +121,8 @@ private[notifier] trait EmailNotifierService extends LazyLogging {
   }
 
   def stayInTouchFilter(stayInTouch: StayInTouch): Boolean =
-    ChronoUnit.SECONDS.between(stayInTouch.lastContacted, ZonedDateTime.now())
-      >= stayInTouch.contactInterval.toSeconds
+    ChronoUnit.DAYS.between(stayInTouch.lastContacted, ZonedDateTime.now())
+      >= stayInTouch.contactInterval.getDays
 
 }
 

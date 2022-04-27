@@ -11,7 +11,7 @@ import ezvcard.property.Uid
 import ezvcard.{Ezvcard, VCard}
 import reactivemongo.api.bson.{BSONDocument, BSONDocumentReader}
 
-import java.time.{Duration, ZonedDateTime}
+import java.time.{Duration, Period, ZonedDateTime}
 import scala.util.Try
 
 private[mongodb] trait BSONReader {
@@ -34,7 +34,7 @@ private[mongodb] trait BSONReader {
           .map(ZonedDateTime.parse(_))
         contactInterval <- bson
           .getAsTry[String]("contactInterval")
-          .map(Duration.parse(_))
+          .map(Period.parse(_))
       } yield StayInTouch(contactId, lastContacted, contactInterval)
     }
 

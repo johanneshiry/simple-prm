@@ -15,7 +15,7 @@ import ezvcard.{Ezvcard, VCard}
 import ezvcard.property.Uid
 
 import java.time.temporal.ChronoUnit
-import java.time.{Duration, ZonedDateTime}
+import java.time.{Duration, Period, ZonedDateTime}
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
@@ -44,7 +44,7 @@ class BSONTransformerSpec extends should.Matchers with AnyWordSpecLike {
 
     "transform a case class w/o a field name correctly" in {
       val zdt = ZonedDateTime.now()
-      val duration = Duration.parse("P2D")
+      val period = Period.parse("P2M")
       val stayInTouchUid = new Uid("bc2b7c8d-1b18-43f7-87ce-42d7489fae76")
       val vCard = Ezvcard
         .parse(
@@ -57,7 +57,7 @@ class BSONTransformerSpec extends should.Matchers with AnyWordSpecLike {
           StayInTouch(
             stayInTouchUid,
             zdt,
-            duration
+            period
           )
         )
       ) match {
@@ -73,7 +73,7 @@ class BSONTransformerSpec extends should.Matchers with AnyWordSpecLike {
             "stayInTouch" -> BSONDocument(
               "contactId" -> BSONString(stayInTouchUid.getValue),
               "lastContacted" -> BSONString(zdt.toString),
-              "contactInterval" -> BSONString(duration.toString)
+              "contactInterval" -> BSONString(period.toString)
             )
           )
           transformed shouldBe expected

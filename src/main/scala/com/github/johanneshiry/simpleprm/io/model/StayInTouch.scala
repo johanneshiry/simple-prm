@@ -11,7 +11,7 @@ import java.time.{Duration, ZonedDateTime}
 final case class StayInTouch private ( // todo rename + different subclasses!
     contactId: Uid,
     lastContacted: ZonedDateTime,
-    contactInterval: java.time.Duration
+    contactInterval: java.time.Period
 ) {
 
   def lastContactedToNow: StayInTouch =
@@ -23,7 +23,7 @@ object StayInTouch {
   def apply(
       contactId: Uid,
       lastContacted: ZonedDateTime,
-      contactInterval: Duration
+      contactInterval: java.time.Period
   ): StayInTouch =
     new StayInTouch(
       contactId,

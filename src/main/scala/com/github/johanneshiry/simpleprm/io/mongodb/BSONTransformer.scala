@@ -9,7 +9,7 @@ import ezvcard.{Ezvcard, VCard}
 import ezvcard.property.Uid
 import reactivemongo.api.bson.*
 
-import java.time.{Duration, ZoneId, ZonedDateTime}
+import java.time.{Duration, Period, ZoneId, ZonedDateTime}
 import java.util.UUID
 import scala.compiletime.summonAll
 import scala.deriving.Mirror
@@ -81,6 +81,12 @@ object BSONTransformer {
 
   given Transformer[Duration] with
     def f(x: Duration, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(
+        fieldName.getOrElse("") -> BSONString(x.toString)
+      )
+
+  given Transformer[Period] with
+    def f(x: Period, fieldName: Option[String] = None): BSONDocument =
       BSONDocument(
         fieldName.getOrElse("") -> BSONString(x.toString)
       )
