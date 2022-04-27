@@ -61,7 +61,9 @@ final case class RestApiV1(
 
     extractRequest.flatMap { request =>
       logger.debug(s"Received request: $request")
-      requestEntityLoggingFunction(request).map(body => logger.debug(body))
+      requestEntityLoggingFunction(request).map(body =>
+        if (body.nonEmpty) logger.debug(body)
+      )
       pass
     }
   }
