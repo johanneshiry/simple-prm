@@ -21,6 +21,8 @@ private[rest] abstract class RestApi(version: String)(implicit
     ec: ExecutionContext
 ) extends LazyLogging {
 
+  private final case class Error(status: Int, message: String)
+
   protected def apiRoute: Route
 
   val httpServer: ServerBuilder
@@ -34,16 +36,12 @@ private[rest] abstract class RestApi(version: String)(implicit
   val rejectionHandler: RejectionHandler =
     RejectionHandler.default.mapRejectionResponse {
       case res @ HttpResponse(_, _, ent: HttpEntity.Strict, _) =>
+        import io.circe.generic.auto._, io.circe.syntax._
+
         val statusCode = res.status.intValue()
         val msg =
           ent.data.utf8String.replaceAll("\"", """\"""").replaceAll("\n", " ")
-        val rej =
-          s"""
-           |{
-           |status: $statusCode,
-           |message: $msg
-           |}
-           |""".stripMargin
+        val rej = Error(statusCode, msg).asJson.toString
 
         res.withEntity(HttpEntity(ContentTypes.`application/json`, rej))
       case x => x // pass through all other types of responses
