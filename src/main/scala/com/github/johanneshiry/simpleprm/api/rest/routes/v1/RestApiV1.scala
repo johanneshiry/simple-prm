@@ -15,6 +15,7 @@ import akka.http.scaladsl.server.directives.BasicDirectives.extractRequest
 import akka.http.scaladsl.server.{Directive0, Route}
 import akka.http.scaladsl.{Http, ServerBuilder}
 import akka.util.ByteString
+import ch.qos.logback.core.net.SocketConnector.ExceptionHandler
 import com.github.johanneshiry.simpleprm.api.rest.RestApi
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.GetContactsPaginatedResponse.PaginatedContacts
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.{
@@ -43,10 +44,8 @@ final case class RestApiV1(
 
   protected def apiRoute: Route =
     debugLogging {
-      cors() { // todo configure + handle rejections (https://github.com/lomigmegard/akka-http-cors/issues/1) + harden cors
-        StayInTouchApi.routes(stayInTouchHandler) ~
-          ContactApi.routes(contactHandler)
-      }
+      StayInTouchApi.routes(stayInTouchHandler) ~
+        ContactApi.routes(contactHandler)
     }
 
   private def debugLogging: Directive0 = {
