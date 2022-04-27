@@ -35,4 +35,8 @@ object JSONCodecs {
       Try(Ezvcard.parse(vCardString).first())
     )
 
+  // throwable
+  implicit val encThrowable: Encoder[Throwable] =
+    (x: Throwable) => Json.fromString(x.toString)
+
 }
