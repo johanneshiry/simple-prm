@@ -22,10 +22,14 @@ import akka.http.scaladsl.model.{
   StatusCodes
 }
 import akka.http.scaladsl.server.Directives.*
-import akka.http.scaladsl.server.{PathMatcher, Route}
+import akka.http.scaladsl.server.{Directive, PathMatcher, Route}
 import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.StayInTouchApi.CreateStayInTouchResponse.CreateStayInTouchResponseOK
+import com.github.johanneshiry.simpleprm.api.rest.routes.v1.StayInTouchApi.DelReminderResponse.{
+  DelReminderResponseFailed,
+  DelReminderResponseOK
+}
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.StayInTouchApi.GetReminderResponse.{
   GetReminderResponseNoContent,
   GetRemindersResponseOK
@@ -37,6 +41,9 @@ import ezvcard.property.Uid
 import io.circe.Decoder.Result
 import io.circe.{Decoder, Encoder, HCursor, Json}
 import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
+
+import java.util.UUID
+import scala.util.{Failure, Success}
 
 object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
 
@@ -56,20 +63,35 @@ object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
         }
       ) ~
         get {
-          // java uuid converts to lowercase, which is in fact valid according to the spec,
-          // but is not valid for uid's and therefore we need to keep upper cases if provided :-(
           path(uuidMatcher) { uuid =>
             complete(handler.getReminder(new Uid(uuid)))
           }
+        } ~
+        delete {
+          path(uuidMatcher) { uuid =>
+            complete(handler.delReminder(UUID.fromString(uuid)))
+          }
         }
     }
+
+  // java uuid converts to lowercase, which is in fact valid according to the spec,
+  // but is not valid for uid's and therefore we need to keep upper cases if provided :-(
+  private def pathByUuid =
+    (handlerAction: Uid => Future[GetReminderResponse]) =>
+      path(uuidMatcher) { uuid =>
+        complete(handlerAction(new Uid(uuid)))
+      }
 
   // handler interface containing all methods supported by the api
   trait StayInTouchHandler {
     def createStayInTouch(
         stayInTouch: StayInTouch
     ): Future[CreateStayInTouchResponse]
+
     def getReminder(contactUid: Uid): Future[GetReminderResponse]
+
+    def delReminder(reminderUuid: UUID): Future[DelReminderResponse]
+
   }
 
   object StayInTouchHandler {
@@ -90,8 +112,16 @@ object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
           case None =>
             GetReminderResponseNoContent
         }
-    }
 
+      def delReminder(reminderUuid: UUID): Future[DelReminderResponse] =
+        dbConnector.delReminder(reminderUuid).map {
+          case Success(_) =>
+            DelReminderResponseOK
+          case Failure(exception) =>
+            DelReminderResponseFailed(exception)
+        }
+
+    }
   }
 
   // responses
@@ -156,6 +186,41 @@ object StayInTouchApi extends FailFastCirceSupport with MarshalSupport {
           marshal(stayInTouch, c.statusCode)
         case c @ GetReminderResponseNoContent =>
           marshal(c.statusCode, emptyHttpJsonArrayResponse)
+      }
+
+  }
+
+  sealed abstract class DelReminderResponse(val statusCode: StatusCode)
+
+  object DelReminderResponse {
+    case object DelReminderResponseOK
+        extends DelReminderResponse(StatusCodes.OK)
+
+    final case class DelReminderResponseFailed(error: Throwable)
+        extends DelReminderResponse(StatusCodes.InternalServerError)
+
+    implicit def delRemindersResponseTRM
+        : ToResponseMarshaller[DelReminderResponse] = Marshaller {
+      implicit ec => resp => createResponseTR(resp)
+    }
+
+    import io.circe.syntax._
+    import scala.language.postfixOps
+
+    implicit def delRemindersMarshaller: Marshaller[Throwable, ResponseEntity] =
+      Marshaller.strict(exception =>
+        Marshalling.Opaque { () => exception.asJson.toString }
+      )
+
+    def createResponseTR(
+        getReminderResp: DelReminderResponse
+    )(implicit ec: ExecutionContext): Future[List[Marshalling[HttpResponse]]] =
+      getReminderResp match {
+        case c @ DelReminderResponseOK =>
+          marshal(emptyHttpJsonObjResponse, c.statusCode)
+        case c @ DelReminderResponseFailed(error) =>
+          marshal(error, c.statusCode)
+
       }
 
   }
