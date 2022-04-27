@@ -9,6 +9,7 @@ import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
 import ezvcard.VCard
 import ezvcard.property.Uid
 
+import java.util.UUID
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
@@ -33,6 +34,8 @@ trait DbConnector {
   def getStayInTouch(
       contactUid: Uid
   ): Future[Option[StayInTouch]] // todo may be multiples -> switch to vector
+
+  def delReminder(reminderUuid: UUID): Future[Try[Unit]]
 
 }
 

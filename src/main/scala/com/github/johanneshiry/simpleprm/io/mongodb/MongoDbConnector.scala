@@ -33,6 +33,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import reactivemongo.api.commands.WriteResult
 
+import java.util.UUID
 import scala.concurrent.impl.Promise
 
 final case class MongoDbConnector(
@@ -82,6 +83,7 @@ final case class MongoDbConnector(
       logger.debug(s"Upsert StayInTouch result: $writeResult")
       stayInTouch
     }) // todo process errors correctly
+    //todo: do not return input, but actually persisted output (may differs e.g. in terms of time zone)
   }
 
   def getAllStayInTouch: Future[Vector[StayInTouch]] =
@@ -89,6 +91,8 @@ final case class MongoDbConnector(
 
   def getStayInTouch(contactUid: Uid): Future[Option[StayInTouch]] =
     contactsCollection.flatMap(findStayInTouch(_, contactUid))
+
+  def delReminder(reminderUuid: UUID): Future[Try[Unit]] = ???
 
   private def contactsCollection: Future[BSONCollection] =
     dbConnection.map(_.collection("contacts"))
