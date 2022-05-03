@@ -13,7 +13,11 @@ import com.github.johanneshiry.simpleprm.io.mongodb.{
 }
 import com.github.johanneshiry.simpleprm.io.DbConnector
 import com.github.johanneshiry.simpleprm.io.DbConnector.SortBy
-import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
+import com.github.johanneshiry.simpleprm.io.model.Reminder.{
+  Birthday,
+  StayInTouch
+}
+import com.github.johanneshiry.simpleprm.io.model.{Contact, Reminder}
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbFunctions.*
 import com.typesafe.scalalogging.LazyLogging
 import ezvcard.{Ezvcard, VCard}
@@ -27,6 +31,7 @@ import reactivemongo.api.bson.{
   BSONString
 }
 import reactivemongo.api.*
+import reactivemongo.api.bson.BSONValue.pretty
 
 import java.time.{Duration, ZonedDateTime}
 import scala.concurrent.{ExecutionContext, Future}
@@ -75,21 +80,21 @@ final case class MongoDbConnector(
     handleMe.map(_ => {}) // todo adapt handling
   }
 
-  def upsertStayInTouch(stayInTouch: StayInTouch): Future[StayInTouch] = {
+  def upsertReminder(reminder: Reminder): Future[Reminder] = {
     val handleMe = contactsCollection.flatMap(
-      upsertStayInTouch(stayInTouch, _)
+      upsertReminder(reminder, _)
     )
     handleMe.map(writeResult => {
       logger.debug(s"Upsert StayInTouch result: $writeResult")
-      stayInTouch
+      reminder
     }) // todo process errors correctly
     //todo: do not return input, but actually persisted output (may differs e.g. in terms of time zone)
   }
 
-  def getAllStayInTouch: Future[Vector[StayInTouch]] =
+  def getAllReminders: Future[Vector[Reminder]] =
     contactsCollection.flatMap(findStayInTouch(_))
 
-  def getStayInTouch(contactUid: Uid): Future[Option[StayInTouch]] =
+  def getStayInTouch(contactUid: Uid): Future[Option[Reminder]] =
     contactsCollection.flatMap(findStayInTouch(_, contactUid))
 
   def delReminder(reminderUuid: UUID): Future[Try[Unit]] = ???
@@ -161,17 +166,21 @@ final case class MongoDbConnector(
       .map(_.map(mongoDbContact => Contact(mongoDbContact.vCard.value)))
   }
 
-  private def upsertStayInTouch(
-      stayInTouch: StayInTouch,
+  private def upsertReminder(
+      reminder: Reminder,
       collection: BSONCollection
   ): Future[WriteResult] = {
 
-    val selector = BSONTransformer.transform(stayInTouch.contactId, Some("_id"))
+    val selector = BSONTransformer.transform(reminder.contactId, Some("_id"))
 
-    // only the stayInTouch field needs to be updated
-    val modifier = set(
-      BSONTransformer.transform(stayInTouch, Some("stayInTouch"))
-    )
+    // only the reminder field needs to be updated
+    // due to BSON Transformer limitations, we need to ensure that we have a case class here
+    val modifier = reminder match {
+      case r: StayInTouch => set(BSONTransformer.transform(r, Some("reminder")))
+      case r: Birthday    => set(BSONTransformer.transform(r, Some("reminder")))
+    }
+
+    println(pretty(modifier))
 
     // do not set upsert to true, as otherwise a stay in touch element is created as document!
     // the executed operation however is still an upsert within a contact if the contact exists!
@@ -182,10 +191,10 @@ final case class MongoDbConnector(
   private def findStayInTouch(
       collection: BSONCollection,
       limit: Option[Int] = None
-  ): Future[Vector[StayInTouch]] = {
+  ): Future[Vector[Reminder]] = {
     // batchSize == 0 -> unspecified batchSize
     val queryBuilder =
-      collection.find(notNull("stayInTouch")).batchSize(limit.getOrElse(0))
+      collection.find(notNull("reminder")).batchSize(limit.getOrElse(0))
 
     queryBuilder
       .cursor[MongoDbContact]()
@@ -197,17 +206,17 @@ final case class MongoDbConnector(
           )
         )
       )
-      .map(_.flatMap(_.stayInTouch))
+      .map(_.flatMap(_.reminder))
   }
 
   private def findStayInTouch(
       collection: BSONCollection,
       contactUid: Uid
-  ): Future[Option[StayInTouch]] = {
+  ): Future[Option[Reminder]] = {
     // query reminder by contact uid
     val query =
-      BSONTransformer.transform(contactUid, Some("stayInTouch.contactId"))
-    collection.find(query).one[MongoDbContact].map(_.flatMap(_.stayInTouch))
+      BSONTransformer.transform(contactUid, Some("reminder.contactId"))
+    collection.find(query).one[MongoDbContact].map(_.flatMap(_.reminder))
   }
 
 }

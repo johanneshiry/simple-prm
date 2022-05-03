@@ -4,12 +4,12 @@
 
 package com.github.johanneshiry.simpleprm.io.mongodb
 
-import com.github.johanneshiry.simpleprm.io.model.StayInTouch
+import com.github.johanneshiry.simpleprm.io.model.Reminder.ReminderType
 import ezvcard.{Ezvcard, VCard}
 import ezvcard.property.Uid
 import reactivemongo.api.bson.*
 
-import java.time.{Duration, Period, ZoneId, ZonedDateTime}
+import java.time.{Duration, LocalDate, Period, ZoneId, ZonedDateTime}
 import java.util.UUID
 import scala.compiletime.summonAll
 import scala.deriving.Mirror
@@ -91,6 +91,12 @@ object BSONTransformer {
         fieldName.getOrElse("") -> BSONString(x.toString)
       )
 
+  given Transformer[LocalDate] with
+    def f(x: LocalDate, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(
+        fieldName.getOrElse("") -> BSONString(x.toString)
+      )
+
   given Transformer[UUID] with
     def f(x: UUID, fieldName: Option[String] = None): BSONDocument =
       BSONDocument(fieldName.getOrElse("") -> BSONString(x.toString))
@@ -105,6 +111,10 @@ object BSONTransformer {
   given Transformer[Uid] with
     def f(x: Uid, fieldName: Option[String] = None): BSONDocument =
       BSONDocument(fieldName.getOrElse("") -> BSONString(x.getValue))
+
+  given Transformer[ReminderType] with
+    def f(x: ReminderType, fieldName: Option[String] = None): BSONDocument =
+      BSONDocument(fieldName.getOrElse("") -> BSONString(x.toString))
 
   given [T](using t: Transformer[T]): Transformer[Option[T]] with
     def f(x: Option[T], fieldName: Option[String] = None): BSONDocument =

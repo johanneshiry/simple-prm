@@ -40,7 +40,7 @@ private[rest] abstract class RestApi(version: String)(implicit
 
         val statusCode = res.status.intValue()
         val msg =
-          ent.data.utf8String.replaceAll("\"", """\"""").replaceAll("\n", " ")
+          ent.data.utf8String.replaceAll("\"", """\"""")
         val rej = Error(statusCode, msg).asJson.toString
 
         res.withEntity(HttpEntity(ContentTypes.`application/json`, rej))

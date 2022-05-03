@@ -5,7 +5,7 @@
 package com.github.johanneshiry.simpleprm.io.mongodb
 
 import com.github.johanneshiry.simpleprm.io.model
-import com.github.johanneshiry.simpleprm.io.model.StayInTouch
+import com.github.johanneshiry.simpleprm.io.model.Reminder
 import ezvcard.VCard as EzvCard
 import ezvcard.property.Uid
 
@@ -16,20 +16,20 @@ private[mongodb] object MongoDbModel {
   final case class Contact private (
       _id: Uid,
       vCard: VCard,
-      stayInTouch: Option[StayInTouch]
+      reminder: Option[Reminder]
   )
 
   object Contact {
-    def apply(vCard: EzvCard, stayInTouch: Option[StayInTouch]): Try[Contact] =
+    def apply(vCard: EzvCard, stayInTouch: Option[Reminder]): Try[Contact] =
       checkAndBuild(vCard.getUid, vCard, stayInTouch)
 
-    def apply(vCard: VCard, stayInTouch: Option[StayInTouch]): Try[Contact] =
+    def apply(vCard: VCard, stayInTouch: Option[Reminder]): Try[Contact] =
       apply(vCard.value, stayInTouch)
 
     private def checkAndBuild(
         _id: Uid,
         vCard: EzvCard,
-        stayInTouch: Option[StayInTouch]
+        reminder: Option[Reminder]
     ): Try[Contact] = {
 
       def allUidEqual(
@@ -41,19 +41,19 @@ private[mongodb] object MongoDbModel {
           stayInTouchUid.getOrElse(_id).getValue
         )
 
-      stayInTouch match {
-        case Some(stayInTouch)
-            if allUidEqual(_id, vCard.getUid, Some(stayInTouch.contactId)) =>
-          Success(Contact(_id, VCard(vCard), Some(stayInTouch)))
+      reminder match {
+        case Some(reminder)
+            if allUidEqual(_id, vCard.getUid, Some(reminder.contactId)) =>
+          Success(Contact(_id, VCard(vCard), Some(reminder)))
         case None if allUidEqual(_id, vCard.getUid) =>
-          Success(Contact(_id, VCard(vCard), stayInTouch))
+          Success(Contact(_id, VCard(vCard), reminder))
         case _ =>
           Failure(
             new IllegalArgumentException(
               s"Cannot construct Contact instance with different Uids.\n" +
                 s"_id = ${_id.getValue}\n" +
                 s"vCardUid = ${vCard.getUid.getValue}" +
-                s"${if (stayInTouch.isDefined) "\nstayInTouchContactId: " + stayInTouch.get.contactId.getValue
+                s"${if (reminder.isDefined) "\nstayInTouchContactId: " + reminder.get.contactId.getValue
                 else ""}"
             )
           )

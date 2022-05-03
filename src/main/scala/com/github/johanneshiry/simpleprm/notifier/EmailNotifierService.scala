@@ -12,11 +12,11 @@ import cats.effect.unsafe.IORuntime
 import com.github.johanneshiry.simpleprm.cfg.{ConfigUtil, SimplePrmCfg}
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg.SSLType
 import com.github.johanneshiry.simpleprm.io.DbConnector
-import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
+import com.github.johanneshiry.simpleprm.io.model.{Contact, Reminder}
 import com.github.johanneshiry.simpleprm.notifier.EmailNotifierService.{
   EmailNotifierServiceCmd,
   EmailsSend,
-  StayInTouchData
+  ReminderData
 }
 import com.typesafe.scalalogging.LazyLogging
 import emil.{Header, Mail, MailConfig, MimeType, SSLType}
@@ -84,7 +84,7 @@ private[notifier] trait EmailNotifierService extends LazyLogging {
 
   def composeEmails(
       emailComposer: EmailComposer,
-      stayInTouchData: Vector[StayInTouchData]
+      stayInTouchData: Vector[ReminderData]
   ): Seq[Mail[IO]] =
     stayInTouchData.map(stayInTouchData =>
       emailComposer.compose(
@@ -100,9 +100,9 @@ private[notifier] trait EmailNotifierService extends LazyLogging {
 
   def relevantStayInTouch(
       dbConnector: DbConnector
-  )(implicit ec: ExecutionContext): Future[Vector[StayInTouchData]] = {
+  )(implicit ec: ExecutionContext): Future[Vector[ReminderData]] = {
 
-    dbConnector.getAllStayInTouch
+    dbConnector.getAllReminders
       .map(_.filter(stayInTouchFilter))
       .zip(
         dbConnector.getAllContacts
@@ -113,16 +113,19 @@ private[notifier] trait EmailNotifierService extends LazyLogging {
           contacts
             .get(stayInTouch.contactId)
             .map(
-              StayInTouchData(_, stayInTouch)
+              ReminderData(_, stayInTouch)
             )
         )
       }
 
   }
 
-  def stayInTouchFilter(stayInTouch: StayInTouch): Boolean =
-    ChronoUnit.DAYS.between(stayInTouch.lastContacted, ZonedDateTime.now())
-      >= stayInTouch.contactInterval.getDays
+  // todo due to change in the sending time it is necessary to check for a larger time frame
+  //  (e.g. if time has been set from 9 am to 6 am we have to subtract up to 24 from the sending interval in order to
+  //  prevent forgetting sending a reminder)
+  def stayInTouchFilter(stayInTouch: Reminder): Boolean =
+    ChronoUnit.DAYS.between(stayInTouch.lastTimeReminded, ZonedDateTime.now())
+      >= stayInTouch.reminderInterval.getDays
 
 }
 
@@ -142,16 +145,16 @@ object EmailNotifierService extends EmailNotifierService {
   private final case class EmailSendFailed(ex: Throwable)
       extends EmailNotifierServiceCmd
 
-  private[notifier] final case class StayInTouchData(
+  private[notifier] final case class ReminderData(
       contact: Contact,
-      stayInTouch: StayInTouch
+      reminder: Reminder
   ) {
-    def lastContactedToNow: StayInTouch =
-      stayInTouch.lastContactedToNow
+    def lastContactedToNow: Reminder =
+      reminder.lastTimeRemindedToNow
   }
 
   private final case class FindStayInTouchSuccessful(
-      entries: Vector[StayInTouchData]
+      entries: Vector[ReminderData]
   ) extends EmailNotifierServiceCmd
 
   private final case class FindStayInTouchFailed(ex: Throwable)
@@ -273,7 +276,7 @@ object EmailNotifierService extends EmailNotifierService {
             .sequence(
               stayInTouches
                 .map(_.lastContactedToNow)
-                .map(stateData.config.dbConnector.upsertStayInTouch)
+                .map(stateData.config.dbConnector.upsertReminder)
             )
             .map(stayInTouchData => (eMailStrings, stayInTouchData))
         )

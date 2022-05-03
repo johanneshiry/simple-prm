@@ -5,7 +5,7 @@
 package com.github.johanneshiry.simpleprm.io
 
 import com.github.johanneshiry.simpleprm.io.DbConnector.SortBy
-import com.github.johanneshiry.simpleprm.io.model.{Contact, StayInTouch}
+import com.github.johanneshiry.simpleprm.io.model.{Contact, Reminder}
 import ezvcard.VCard
 import ezvcard.property.Uid
 
@@ -27,13 +27,13 @@ trait DbConnector {
 
   def delContacts(contacts: Seq[Contact]): Future[Unit]
 
-  def upsertStayInTouch(stayInTouch: StayInTouch): Future[StayInTouch]
+  def upsertReminder(stayInTouch: Reminder): Future[Reminder]
 
-  def getAllStayInTouch: Future[Vector[StayInTouch]]
+  def getAllReminders: Future[Vector[Reminder]]
 
   def getStayInTouch(
       contactUid: Uid
-  ): Future[Option[StayInTouch]] // todo may be multiples -> switch to vector
+  ): Future[Option[Reminder]] // todo may be multiples -> switch to vector
 
   def delReminder(reminderUuid: UUID): Future[Try[Unit]]
 

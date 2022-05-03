@@ -22,8 +22,7 @@ import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.{
   ContactHandler,
   GetContactsPaginatedResponseOK
 }
-import com.github.johanneshiry.simpleprm.api.rest.routes.v1.StayInTouchApi.StayInTouchHandler
-import com.github.johanneshiry.simpleprm.io.model.StayInTouch
+import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ReminderApi.StayInTouchHandler
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration.FiniteDuration
@@ -44,7 +43,7 @@ final case class RestApiV1(
 
   protected def apiRoute: Route =
     debugLogging {
-      StayInTouchApi.routes(stayInTouchHandler) ~
+      ReminderApi.routes(stayInTouchHandler) ~
         ContactApi.routes(contactHandler)
     }
 
