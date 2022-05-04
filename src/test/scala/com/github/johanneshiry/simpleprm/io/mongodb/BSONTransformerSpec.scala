@@ -4,7 +4,7 @@
 
 package com.github.johanneshiry.simpleprm.io.mongodb
 
-import com.github.johanneshiry.simpleprm.io.mongodb.BSONTransformer
+import com.github.johanneshiry.simpleprm.io.mongodb.BsonEncoder
 import org.scalatest.*
 import org.scalatest.matchers.should
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -25,7 +25,7 @@ class BSONTransformerSpec extends should.Matchers with AnyWordSpecLike {
     "transform a String w/o a field name correctly" in {
 
       val test = "test"
-      BSONTransformer.transform(test) shouldBe BSONDocument(
+      BsonEncoder.encode(test) shouldBe BSONDocument(
         "" -> BSONString(test)
       )
 
@@ -35,7 +35,7 @@ class BSONTransformerSpec extends should.Matchers with AnyWordSpecLike {
 
       val test = "test"
       val fieldName = "id"
-      BSONTransformer.transform(test, Some(fieldName)) shouldBe BSONDocument(
+      BsonEncoder.encode(test, Some(fieldName)) shouldBe BSONDocument(
         fieldName -> BSONString(test)
       )
 

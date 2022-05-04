@@ -7,10 +7,7 @@ package com.github.johanneshiry.simpleprm.io.mongodb
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbModel.Contact as MongoDbContact
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbModel.VCard as MongoDbVCard
-import com.github.johanneshiry.simpleprm.io.mongodb.{
-  BSONReader,
-  BSONTransformer
-}
+import com.github.johanneshiry.simpleprm.io.mongodb.{BSONReader, BsonEncoder}
 import com.github.johanneshiry.simpleprm.io.DbConnector
 import com.github.johanneshiry.simpleprm.io.DbConnector.SortBy
 import com.github.johanneshiry.simpleprm.io.model.Reminder.{
@@ -129,7 +126,7 @@ final case class MongoDbConnector(
 
     // only the vCard needs to be updated
     val modifierFunc = (vCard: MongoDbVCard) =>
-      set(BSONTransformer.transform(vCard, Some("vCard")))
+      set(BsonEncoder.encode(vCard, Some("vCard")))
 
     // q = selector, u = modifier
     val updates = Future.sequence(
@@ -171,13 +168,13 @@ final case class MongoDbConnector(
       collection: BSONCollection
   ): Future[WriteResult] = {
 
-    val selector = BSONTransformer.transform(reminder.contactId, Some("_id"))
+    val selector = BsonEncoder.encode(reminder.contactId, Some("_id"))
 
     // only the reminder field needs to be updated
     // due to BSON Transformer limitations, we need to ensure that we have a case class here
     val modifier = reminder match {
-      case r: StayInTouch => set(BSONTransformer.transform(r, Some("reminder")))
-      case r: Birthday    => set(BSONTransformer.transform(r, Some("reminder")))
+      case r: StayInTouch => set(BsonEncoder.encode(r, Some("reminder")))
+      case r: Birthday    => set(BsonEncoder.encode(r, Some("reminder")))
     }
 
     println(pretty(modifier))
@@ -215,7 +212,7 @@ final case class MongoDbConnector(
   ): Future[Option[Reminder]] = {
     // query reminder by contact uid
     val query =
-      BSONTransformer.transform(contactUid, Some("reminder.contactId"))
+      BsonEncoder.encode(contactUid, Some("reminder.contactId"))
     collection.find(query).one[MongoDbContact].map(_.flatMap(_.reminder))
   }
 

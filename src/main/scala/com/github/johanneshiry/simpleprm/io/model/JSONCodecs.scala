@@ -9,7 +9,7 @@ import com.github.johanneshiry.simpleprm.io.model.Reminder.{
   ReminderType,
   StayInTouch
 }
-import com.github.johanneshiry.simpleprm.io.mongodb.BSONTransformer
+import com.github.johanneshiry.simpleprm.io.mongodb.BsonEncoder
 import io.circe.parser.decode
 import ezvcard.{Ezvcard, VCard}
 import ezvcard.property.Uid
@@ -27,6 +27,8 @@ object JSONCodecs {
 
   // todo central place for field names!
   // todo combine decoder with BSON Reader to one single place for safety
+
+  // todo remove
 
   // ezvcard.property.Uid
   implicit val encUid: Encoder[Uid] =

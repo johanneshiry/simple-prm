@@ -16,7 +16,7 @@ private[mongodb] object MongoDbFunctions {
   val defaultOffsetNo: Int = 0
 
   val contactByUidSelector: Contact => BSONDocument = (contact: Contact) =>
-    BSONTransformer.transform(contact.uid, Some("_id"))
+    BsonEncoder.encode(contact.uid, Some("_id"))
 
   // { "$set": { <field1> : <value1>, ... } }
   val set: BSONDocument => BSONDocument = (doc: BSONDocument) =>
