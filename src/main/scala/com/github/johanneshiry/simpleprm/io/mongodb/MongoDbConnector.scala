@@ -44,6 +44,7 @@ final case class MongoDbConnector(
     db: String
 )(implicit ec: ExecutionContext)
     extends DbConnector
+    with ReminderConnector
     with BsonDecoder
     with LazyLogging {
 
@@ -91,12 +92,13 @@ final case class MongoDbConnector(
   }
 
   def getAllReminders: Future[Vector[Reminder]] =
-    contactsCollection.flatMap(findReminder(_))
+    contactsCollection.flatMap(findReminders(_))
 
   def getReminder(contactUid: Uid): Future[Option[Reminder]] =
     contactsCollection.flatMap(findReminder(_, contactUid))
 
-  def delReminder(reminderUuid: UUID): Future[Try[Unit]] = ???
+  def delReminder(reminderUuid: UUID): Future[Try[Unit]] =
+    contactsCollection.flatMap(removeReminder(_, reminderUuid))
 
   private def contactsCollection: Future[BSONCollection] =
     dbConnection.map(_.collection("contacts"))
@@ -180,36 +182,6 @@ final case class MongoDbConnector(
     // the executed operation however is still an upsert within a contact if the contact exists!
     collection.update.one(selector, modifier, upsert = upsert)
 
-  }
-
-  private def findReminder(
-      collection: BSONCollection,
-      limit: Option[Int] = None
-  ): Future[Vector[Reminder]] = {
-    // batchSize == 0 -> unspecified batchSize
-    val queryBuilder =
-      collection.find(notNull("reminder")).batchSize(limit.getOrElse(0))
-
-    queryBuilder
-      .cursor[MongoDbContact]()
-      .collect[Vector](err =
-        Cursor.FailOnError[Vector[MongoDbContact]]((_, throwable) =>
-          logger.error(
-            s"Cannot execute mongo db query '${queryBuilder.toString}'",
-            throwable
-          )
-        )
-      )
-      .map(_.flatMap(_.reminder))
-  }
-
-  private def findReminder(
-      collection: BSONCollection,
-      contactUid: Uid
-  ): Future[Option[Reminder]] = {
-    // query reminder by contact uid
-    val query = contactUid.asBson("reminder.contactId")
-    collection.find(query).one[MongoDbContact].map(_.flatMap(_.reminder))
   }
 
 }

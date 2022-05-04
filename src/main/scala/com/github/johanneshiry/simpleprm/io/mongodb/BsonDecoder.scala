@@ -60,8 +60,9 @@ private[mongodb] object BsonDecoder {
       s.replace("\n", " ")
   }
 
-  implicit private[mongodb] final class DecoderOps(private val bsonDoc: BSONDocument)
-      extends AnyVal {
+  implicit private[mongodb] final class DecoderOps(
+      private val bsonDoc: BSONDocument
+  ) extends AnyVal {
 
     import io.circe.parser.*
     import BsonDecoder.*
