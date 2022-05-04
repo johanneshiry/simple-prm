@@ -24,10 +24,10 @@ import scala.deriving.Mirror
 object BsonEncoder extends Encoder[BSONDocument] {
 
   implicit final class EncoderOps[A](private val value: A) extends AnyVal {
-    final def asBson(fieldName: Option[String] = None)(using
+    final def asBson(fieldName: String)(using
         encoder: Encoder[A]
     ): BSONDocument =
-      encoder.f(value, fieldName)
+      encoder.f(value, Some(fieldName))
 
     final def asBson(using encoder: Encoder[A]): BSONDocument =
       encoder.f(value)

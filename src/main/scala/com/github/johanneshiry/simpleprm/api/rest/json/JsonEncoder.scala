@@ -10,10 +10,10 @@ import io.circe.{Json, JsonNumber, JsonObject}
 object JsonEncoder extends Encoder[Json] {
 
   implicit final class EncoderOps[A](private val value: A) extends AnyVal {
-    final def asJson(fieldName: Option[String] = None)(using
+    final def asJson(fieldName: String)(using
         encoder: Encoder[A]
     ): Json =
-      encoder.f(value, fieldName)
+      encoder.f(value, Some(fieldName))
 
     final def asJson(using encoder: Encoder[A]): Json =
       encoder.f(value)
