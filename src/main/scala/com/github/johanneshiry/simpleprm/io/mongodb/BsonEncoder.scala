@@ -9,6 +9,7 @@ import com.github.johanneshiry.simpleprm.io.mongodb.BsonEncoder.encode
 import ezvcard.property.Uid
 import reactivemongo.api.bson.BSONValue.pretty
 import reactivemongo.api.bson.{
+  BSONArray,
   BSONDocument,
   BSONDouble,
   BSONInteger,
@@ -105,7 +106,7 @@ object BsonEncoder extends Encoder[BSONDocument] {
 
   override def seqHandler[T](x: Seq[T], fieldName: Option[String])(using
       t: BsonEncoder.Encoder[T]
-  ): BSONDocument =
-    ??? // todo
-
+  ): BSONDocument = BSONDocument(
+    fieldName.getOrElse("") -> BSONArray(x.map(t.f(_)))
+  )
 }
