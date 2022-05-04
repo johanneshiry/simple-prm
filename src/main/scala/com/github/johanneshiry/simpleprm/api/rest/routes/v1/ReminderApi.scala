@@ -25,6 +25,7 @@ import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.{Directive, PathMatcher, Route}
 import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
+import com.github.johanneshiry.simpleprm.api.rest.json.JsonDecoder
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ReminderApi.CreateReminderResponse.CreateStayInTouchResponseOK
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ReminderApi.DelReminderResponse.{
   DelReminderResponseFailed,
@@ -44,14 +45,13 @@ import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
 
 import java.util.UUID
 import scala.util.{Failure, Success}
-
 import com.github.johanneshiry.simpleprm.api.rest.json.JsonEncoder.*
 
-object ReminderApi extends FailFastCirceSupport with MarshalSupport {
+object ReminderApi
+    extends FailFastCirceSupport
+    with MarshalSupport
+    with JsonDecoder {
 
-  // routes
-  implicit val decReminder: Decoder[Reminder] =
-    JSONCodecs.decReminder(JSONCodecs.decUid("contactId"))
   private val uuidMatcher = PathMatcher(
     """[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}""".r
   )
