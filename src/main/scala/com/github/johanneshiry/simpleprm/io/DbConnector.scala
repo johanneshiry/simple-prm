@@ -33,7 +33,7 @@ trait DbConnector {
 
   def getReminder(
       contactUid: Uid
-  ): Future[Option[Reminder]] // todo may be multiples -> switch to vector
+  ): Future[Seq[Reminder]]
 
   def delReminder(reminderUuid: UUID): Future[Try[Unit]]
 

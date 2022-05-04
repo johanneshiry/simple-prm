@@ -9,11 +9,32 @@ import com.github.johanneshiry.simpleprm.io.model.{Contact, Reminder}
 import io.circe.{Json, ParsingFailure}
 import BsonDecoder.*
 import reactivemongo.api.bson.{
+  BSONArray,
+  BSONBinary,
+  BSONBoolean,
+  BSONDateTime,
+  BSONDecimal,
   BSONDocument,
   BSONDocumentReader,
+  BSONDouble,
   BSONElement,
+  BSONInteger,
+  BSONJavaScript,
+  BSONJavaScriptWS,
+  BSONLong,
+  BSONMaxKey,
+  BSONMinKey,
+  BSONNull,
+  BSONObjectID,
+  BSONReader,
+  BSONRegex,
   BSONString,
-  BSONUndefined
+  BSONSymbol,
+  BSONTimestamp,
+  BSONUndefined,
+  BSONValue,
+  BSONWriter,
+  Macros
 }
 import reactivemongo.api.bson.BSONValue.pretty
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbModel.Contact as MongoDbContact
@@ -25,22 +46,22 @@ private[mongodb] trait BsonDecoder extends JsonDecoder {
   implicit val contactReader: BSONDocumentReader[Contact] =
     BSONDocumentReader.from[Contact](_.asJson.flatMap(_.as[Contact]).toTry)
 
-  implicit val reminderReader: BSONDocumentReader[Reminder] =
-    BSONDocumentReader.from[Reminder](_.asJson.flatMap(_.as[Reminder]).toTry)
+  implicit val remindersReader: BSONReader[Seq[Reminder]] =
+    BSONReader.sequence(_.asJson.flatMap(_.as[Reminder]).toTry)
 
   // todo field names to central place
   // as parsing vCardStrings with json is annoyingly unstable, we use a separate decoder here
   implicit val mongoDbContactReader: BSONDocumentReader[MongoDbContact] =
     BSONDocumentReader.from[MongoDbContact] { bson =>
       for {
-        stayInTouch <- bson.getAsUnflattenedTry[Reminder]("reminder")(
-          reminderReader
+        reminders <- bson.getAsUnflattenedTry[Seq[Reminder]]("reminders")(
+          remindersReader
         )
         vCard <- bson
           .getAsTry[BSONDocument]("vCard")
           .flatMap(_.getAsTry[String]("value"))
           .map(vCardString => MongoDbVCard(Ezvcard.parse(vCardString).first()))
-        mongoDbContact <- MongoDbContact(vCard, stayInTouch)
+        mongoDbContact <- MongoDbContact(vCard, reminders.getOrElse(Seq.empty))
       } yield mongoDbContact
     }
 
@@ -61,27 +82,31 @@ private[mongodb] object BsonDecoder {
   }
 
   implicit private[mongodb] final class DecoderOps(
-      private val bsonDoc: BSONDocument
+      private val bsonVal: BSONValue
   ) extends AnyVal {
 
     import io.circe.parser.*
     import BsonDecoder.*
 
-    private def undefinedToEmpty(bson: BSONDocument) = {
-      val elems = bson.elements.map(element =>
-        element.value match
-          case _: BSONUndefined => BSONElement(element.name, BSONString(""))
-          case _                => element
-      )
-      BSONDocument.newBuilder.addAll(elems).result()
+    private def undefinedToEmpty(bson: BSONValue) = {
+      bson match
+        case document: BSONDocument =>
+          val elems = document.elements.map(element =>
+            element.value match
+              case _: BSONUndefined => BSONElement(element.name, BSONString(""))
+              case _                => element
+          )
+          BSONDocument.newBuilder.addAll(elems).result()
+        case nonDocument =>
+          nonDocument
     }
 
-    private def clean(bson: BSONDocument) =
+    private def clean(bson: BSONValue) =
       pretty(
         undefinedToEmpty(bson)
       ).doubleQuotes.noCarriageReturn.noNewLine.trim
 
-    final def asJson: Either[ParsingFailure, Json] = parse(clean(bsonDoc))
+    final def asJson: Either[ParsingFailure, Json] = parse(clean(bsonVal))
   }
 
 }

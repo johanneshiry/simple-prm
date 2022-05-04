@@ -55,7 +55,7 @@ object ReminderApi
     """[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}""".r
   )
 
-  def routes(handler: StayInTouchHandler): Route =
+  def routes(handler: ReminderHandler): Route =
     pathPrefix("reminder") {
       post(
         entity(as[Reminder]) { reminder =>
@@ -75,7 +75,7 @@ object ReminderApi
     }
 
   // handler interface containing all methods supported by the api
-  trait StayInTouchHandler {
+  trait ReminderHandler {
     def createReminder(
         reminder: Reminder
     ): Future[CreateReminderResponse]
@@ -86,24 +86,23 @@ object ReminderApi
 
   }
 
-  object StayInTouchHandler {
+  object ReminderHandler {
 
     final case class StayInTouchHandler(dbConnector: DbConnector)(implicit
         ec: ExecutionContext
-    ) extends ReminderApi.StayInTouchHandler {
+    ) extends ReminderApi.ReminderHandler {
       def createReminder(
           reminder: Reminder
       ): Future[CreateReminderResponse] = dbConnector
         .updateReminder(reminder, false)
         .map(CreateStayInTouchResponseOK.apply) // todo return error on failure
 
-      def getReminder(contactUid: Uid): Future[GetReminderResponse] =
-        dbConnector.getReminder(contactUid).map {
-          case Some(reminder) =>
-            GetRemindersResponseOK(Vector(reminder))
-          case None =>
-            GetReminderResponseNoContent
-        }
+      def getReminder(
+          contactUid: Uid
+      ): Future[
+        GetReminderResponse
+      ] = // todo adapt and move this to user endpoint
+        dbConnector.getReminder(contactUid).map(GetRemindersResponseOK.apply)
 
       def delReminder(reminderUuid: UUID): Future[DelReminderResponse] =
         dbConnector.delReminder(reminderUuid).map {
@@ -148,7 +147,7 @@ object ReminderApi
 
   object GetReminderResponse {
 
-    final case class GetRemindersResponseOK(value: Vector[Reminder])
+    final case class GetRemindersResponseOK(value: Seq[Reminder])
         extends GetReminderResponse(StatusCodes.OK)
 
     case object GetReminderResponseNoContent
@@ -160,7 +159,7 @@ object ReminderApi
     }
 
     implicit def getRemindersMarshaller
-        : Marshaller[Vector[Reminder], ResponseEntity] =
+        : Marshaller[Seq[Reminder], ResponseEntity] =
       Marshaller.strict(reminders =>
         Marshalling.Opaque { () =>
           reminders.asJson.toString
@@ -171,8 +170,8 @@ object ReminderApi
         getReminderResp: GetReminderResponse
     )(implicit ec: ExecutionContext): Future[List[Marshalling[HttpResponse]]] =
       getReminderResp match {
-        case c @ GetRemindersResponseOK(stayInTouch) =>
-          marshal(stayInTouch, c.statusCode)
+        case c @ GetRemindersResponseOK(reminders) =>
+          marshal(reminders, c.statusCode)
         case c @ GetReminderResponseNoContent =>
           marshal(c.statusCode, emptyHttpJsonArrayResponse)
       }

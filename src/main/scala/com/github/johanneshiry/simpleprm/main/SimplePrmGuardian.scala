@@ -9,7 +9,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.ContactHandler.ContactHandler
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.RestApiV1
-import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ReminderApi.StayInTouchHandler
+import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ReminderApi.ReminderHandler
 import com.github.johanneshiry.simpleprm.carddav.{CardDavService, SyncService}
 import com.github.johanneshiry.simpleprm.carddav.CardDavService.ConfigParams
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
@@ -79,7 +79,7 @@ object SimplePrmGuardian extends LazyLogging {
       RestApiV1(
         Http().newServerAt(cfg.simple_prm.rest.host, cfg.simple_prm.rest.port),
         ContactHandler(connector),
-        StayInTouchHandler.StayInTouchHandler(connector)
+        ReminderHandler.StayInTouchHandler(connector)
       )
 
       logger.info("Startup complete!")

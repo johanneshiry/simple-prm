@@ -22,7 +22,7 @@ import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.{
   ContactHandler,
   GetContactsPaginatedResponseOK
 }
-import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ReminderApi.StayInTouchHandler
+import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ReminderApi.ReminderHandler
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration.FiniteDuration
@@ -32,7 +32,7 @@ import scala.util.{Failure, Success}
 final case class RestApiV1(
     httpServer: ServerBuilder,
     contactHandler: ContactHandler,
-    stayInTouchHandler: StayInTouchHandler
+    stayInTouchHandler: ReminderHandler
 )(implicit
     actorSystem: ActorSystem[Nothing],
     ec: ExecutionContext

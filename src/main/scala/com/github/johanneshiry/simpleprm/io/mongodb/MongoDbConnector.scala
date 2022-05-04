@@ -94,8 +94,8 @@ final case class MongoDbConnector(
   def getAllReminders: Future[Vector[Reminder]] =
     contactsCollection.flatMap(findReminders(_))
 
-  def getReminder(contactUid: Uid): Future[Option[Reminder]] =
-    contactsCollection.flatMap(findReminder(_, contactUid))
+  def getReminder(contactUid: Uid): Future[Seq[Reminder]] =
+    contactsCollection.flatMap(findReminders(_, contactUid))
 
   def delReminder(reminderUuid: UUID): Future[Try[Unit]] =
     contactsCollection.flatMap(removeReminder(_, reminderUuid))
@@ -165,23 +165,6 @@ final case class MongoDbConnector(
         err = Cursor.FailOnError[Vector[MongoDbContact]]()
       )
       .map(_.map(mongoDbContact => Contact(mongoDbContact.vCard.value)))
-  }
-
-  private def updateReminder(
-      reminder: Reminder,
-      collection: BSONCollection,
-      upsert: Boolean
-  ): Future[WriteResult] = {
-
-    val selector = reminder.contactId.asBson("_id")
-
-    // only the reminder field needs to be updated
-    val modifier = set(reminder.asBson("reminder"))
-
-    // do not set upsert to true, as otherwise a stay in touch element is created as document!
-    // the executed operation however is still an upsert within a contact if the contact exists!
-    collection.update.one(selector, modifier, upsert = upsert)
-
   }
 
 }

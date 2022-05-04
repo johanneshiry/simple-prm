@@ -4,11 +4,13 @@
 
 package com.github.johanneshiry.simpleprm.io.mongodb
 
+import akka.util.Collections
 import com.github.johanneshiry.simpleprm.io.model
 import com.github.johanneshiry.simpleprm.io.model.Reminder
 import ezvcard.VCard as EzvCard
 import ezvcard.property.Uid
 
+import scala.collection.immutable.{AbstractSeq, LinearSeq}
 import scala.util.{Failure, Success, Try}
 
 private[mongodb] object MongoDbModel {
@@ -16,44 +18,50 @@ private[mongodb] object MongoDbModel {
   final case class Contact private (
       _id: Uid,
       vCard: VCard,
-      reminder: Option[Reminder]
+      reminders: Seq[Reminder]
   )
 
   object Contact {
-    def apply(vCard: EzvCard, stayInTouch: Option[Reminder]): Try[Contact] =
-      checkAndBuild(vCard.getUid, vCard, stayInTouch)
+    def apply(vCard: EzvCard, reminders: Seq[Reminder]): Try[Contact] =
+      checkAndBuild(vCard.getUid, vCard, reminders)
 
-    def apply(vCard: VCard, stayInTouch: Option[Reminder]): Try[Contact] =
-      apply(vCard.value, stayInTouch)
+    def apply(vCard: VCard, reminders: Seq[Reminder]): Try[Contact] =
+      apply(vCard.value, reminders)
 
     private def checkAndBuild(
         _id: Uid,
         vCard: EzvCard,
-        reminder: Option[Reminder]
+        reminders: Seq[Reminder]
     ): Try[Contact] = {
 
       def allUidEqual(
           _id: Uid,
           vCardUid: Uid,
-          stayInTouchUid: Option[Uid] = None
+          reminderContactUids: Set[Uid]
       ): Boolean =
-        _id.getValue.equals(vCardUid.getValue) && _id.getValue.equals(
-          stayInTouchUid.getOrElse(_id).getValue
-        )
+        _id.getValue.equals(vCardUid.getValue) &&
+          reminderContactUids.size == 1 &&
+          _id.getValue.equals(
+            reminderContactUids.headOption.getOrElse(_id).getValue
+          )
 
-      reminder match {
-        case Some(reminder)
-            if allUidEqual(_id, vCard.getUid, Some(reminder.contactId)) =>
-          Success(Contact(_id, VCard(vCard), Some(reminder)))
-        case None if allUidEqual(_id, vCard.getUid) =>
-          Success(Contact(_id, VCard(vCard), reminder))
+      reminders match {
+        case Nil =>
+          Success(Contact(_id, VCard(vCard), reminders))
+        case _
+            if allUidEqual(
+              _id,
+              vCard.getUid,
+              reminders.map(_.contactId).toSet
+            ) =>
+          Success(Contact(_id, VCard(vCard), reminders))
         case _ =>
           Failure(
             new IllegalArgumentException(
               s"Cannot construct Contact instance with different Uids.\n" +
                 s"_id = ${_id.getValue}\n" +
                 s"vCardUid = ${vCard.getUid.getValue}" +
-                s"${if (reminder.isDefined) "\nstayInTouchContactId: " + reminder.get.contactId.getValue
+                s"${if (reminders.nonEmpty) "\nremindersContactId: [" + reminders.mkString(", ") + "]"
                 else ""}"
             )
           )
