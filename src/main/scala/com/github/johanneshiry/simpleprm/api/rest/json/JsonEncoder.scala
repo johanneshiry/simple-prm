@@ -67,7 +67,8 @@ object JsonEncoder extends Encoder[Json] {
           transformer.f(elem, Some(fieldName)).asObject
       }
 
-    Json.fromJsonObject(transformed.reduce(_.deepMerge(_)))
+    // to keep object field order, a reverse is required
+    Json.fromJsonObject(transformed.reverse.reduce(_.deepMerge(_)))
   }
 
   private def maybeJsonObj(json: Json, fieldName: Option[String]) =
