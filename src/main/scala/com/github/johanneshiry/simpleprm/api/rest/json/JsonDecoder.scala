@@ -4,7 +4,8 @@
 
 package com.github.johanneshiry.simpleprm.api.rest.json
 
-import com.github.johanneshiry.simpleprm.io.model.Reminder
+import akka.http.scaladsl.model.ParsingException
+import com.github.johanneshiry.simpleprm.io.model.{Contact, Reminder}
 import com.github.johanneshiry.simpleprm.io.model.Reminder.{
   Birthday,
   ReminderType,
@@ -28,9 +29,18 @@ trait JsonDecoder {
   implicit val decUid: Decoder[Uid] =
     Decoder.decodeString.emapTry(uidString => Try(new Uid(uidString)))
 
+  // vCard string modification required to avoid parsing issues
   implicit val decVCard: Decoder[VCard] =
     Decoder.decodeString.emapTry(vCardString =>
-      Try(Ezvcard.parse(vCardString).first())
+      Try(
+        Option(Ezvcard.parse(vCardString).first())
+          .getOrElse(
+            throw DecodingFailure(
+              s"Cannot decode vCard from string:\n$vCardString",
+              List.empty
+            )
+          )
+      )
     )
 
   // todo reminderType field to central place!
@@ -80,6 +90,8 @@ trait JsonDecoder {
       reminderDate <- c.downField("reminderDate").as[LocalDate]
       lastTimeReminded <- c.downField("lastTimeReminded").as[LocalDate]
     } yield Birthday(uuid, contactId, reminderDate, lastTimeReminded)
+
+  implicit val decContact: Decoder[Contact] = deriveDecoder[Contact]
 
   private def leftString[A](res: Decoder.Result[A]) = {
     import cats.implicits._
