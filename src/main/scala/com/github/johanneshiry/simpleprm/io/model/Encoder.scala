@@ -119,9 +119,17 @@ trait Encoder[A] {
     def f(x: Seq[T], fieldName: Option[String] = None): A =
       seqHandler(x, fieldName)
 
+  given [T](using t: Encoder[T]): Encoder[Vector[T]] with
+    def f(x: Vector[T], fieldName: Option[String] = None): A =
+      seqHandler(x, fieldName)
+
   given Encoder[Uid] with
     def f(x: Uid, fieldName: Option[String] = None): A =
       stringHandler(x.getValue, fieldName)
+
+  given Encoder[Throwable] with
+    def f(x: Throwable, fieldName: Option[String] = None): A =
+      stringHandler(x.toString, fieldName)
 
   given Encoder[ReminderType] with
     def f(x: ReminderType, fieldName: Option[String] = None): A =
