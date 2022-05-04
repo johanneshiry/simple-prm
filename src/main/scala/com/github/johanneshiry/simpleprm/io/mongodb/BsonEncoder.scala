@@ -37,7 +37,7 @@ import java.util.UUID
 import scala.compiletime.summonAll
 import scala.deriving.Mirror
 
-object BsonEncoder extends Encoder[BSONValue] {
+private[mongodb] object BsonEncoder extends Encoder[BSONValue] {
 
   implicit final class EncoderOps[A](private val value: A) extends AnyVal {
     // whenever a field name is provided, a document can be expected per convention

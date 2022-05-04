@@ -36,12 +36,11 @@ import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ReminderApi.GetRemin
   GetRemindersResponseOK
 }
 import com.github.johanneshiry.simpleprm.io.DbConnector
-import com.github.johanneshiry.simpleprm.io.model.{JSONCodecs, Reminder}
+import com.github.johanneshiry.simpleprm.io.model.Reminder
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import ezvcard.property.Uid
 import io.circe.Decoder.Result
 import io.circe.{Decoder, Encoder, HCursor, Json}
-import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
 
 import java.util.UUID
 import scala.util.{Failure, Success}

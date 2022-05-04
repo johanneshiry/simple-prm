@@ -24,7 +24,6 @@ import akka.http.scaladsl.server.{
 }
 import com.github.johanneshiry.simpleprm.api.rest.routes.v1.ContactApi.GetContactsPaginatedResponse.PaginatedContacts
 import com.github.johanneshiry.simpleprm.io.model.Contact
-import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
 import akka.http.scaladsl.server.Directives.*
 import akka.http.scaladsl.server.RouteResult.Rejected
 import com.github.johanneshiry.simpleprm.io.DbConnector

@@ -7,7 +7,7 @@ package com.github.johanneshiry.simpleprm.io.mongodb
 import com.github.johanneshiry.simpleprm.cfg.SimplePrmCfg
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbModel.Contact as MongoDbContact
 import com.github.johanneshiry.simpleprm.io.mongodb.MongoDbModel.VCard as MongoDbVCard
-import com.github.johanneshiry.simpleprm.io.mongodb.{BSONReader, BsonEncoder}
+import com.github.johanneshiry.simpleprm.io.mongodb.BsonEncoder
 import com.github.johanneshiry.simpleprm.io.DbConnector
 import com.github.johanneshiry.simpleprm.io.DbConnector.SortBy
 import com.github.johanneshiry.simpleprm.io.model.Reminder.{
@@ -44,7 +44,7 @@ final case class MongoDbConnector(
     db: String
 )(implicit ec: ExecutionContext)
     extends DbConnector
-    with BSONReader
+    with BsonDecoder
     with LazyLogging {
 
   import BsonEncoder.*
@@ -91,7 +91,7 @@ final case class MongoDbConnector(
   }
 
   def getAllReminders: Future[Vector[Reminder]] =
-    contactsCollection.flatMap(findStayInTouch(_))
+    contactsCollection.flatMap(findReminder(_))
 
   def getReminder(contactUid: Uid): Future[Option[Reminder]] =
     contactsCollection.flatMap(findReminder(_, contactUid))
@@ -182,7 +182,7 @@ final case class MongoDbConnector(
 
   }
 
-  private def findStayInTouch(
+  private def findReminder(
       collection: BSONCollection,
       limit: Option[Int] = None
   ): Future[Vector[Reminder]] = {
