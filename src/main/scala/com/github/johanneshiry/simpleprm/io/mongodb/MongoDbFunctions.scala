@@ -10,13 +10,15 @@ import reactivemongo.api.bson.BSONDocument
 
 private[mongodb] object MongoDbFunctions {
 
+  import BsonEncoder.*
+
   // defaults
   val defaultBatchSize: Int = 101
 
   val defaultOffsetNo: Int = 0
 
   val contactByUidSelector: Contact => BSONDocument = (contact: Contact) =>
-    BsonEncoder.encode(contact.uid, Some("_id"))
+    contact.uid.asBson("_id")
 
   // { "$set": { <field1> : <value1>, ... } }
   val set: BSONDocument => BSONDocument = (doc: BSONDocument) =>

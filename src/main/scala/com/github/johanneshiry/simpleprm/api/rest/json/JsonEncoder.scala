@@ -48,14 +48,14 @@ object JsonEncoder extends Encoder[Json] {
   )(using t: Encoder[T]): Json =
     x match
       case None =>
-        Json.Null
+        maybeJsonObj(Json.Null, fieldName)
       case Some(x) =>
         t.f(x, fieldName)
 
   override protected def seqHandler[T](x: Seq[T], fieldName: Option[String])(
       using t: Encoder[T]
   ): Json =
-    Json.fromValues(x.map(t.f(_)))
+    maybeJsonObj(Json.fromValues(x.map(t.f(_))), fieldName)
 
   override protected def productHandler[P <: Product](
       a: P,
@@ -68,7 +68,10 @@ object JsonEncoder extends Encoder[Json] {
       }
 
     // to keep object field order, a reverse is required
-    Json.fromJsonObject(transformed.reverse.reduce(_.deepMerge(_)))
+    maybeJsonObj(
+      Json.fromJsonObject(transformed.reverse.reduce(_.deepMerge(_))),
+      fieldName
+    )
   }
 
   private def maybeJsonObj(json: Json, fieldName: Option[String]) =
