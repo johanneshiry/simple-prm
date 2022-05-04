@@ -106,6 +106,6 @@ object BsonEncoder extends Encoder[BSONDocument] {
   override def seqHandler[T](x: Seq[T], fieldName: Option[String])(using
       t: BsonEncoder.Encoder[T]
   ): BSONDocument =
-    ???
+    ??? // todo
 
 }

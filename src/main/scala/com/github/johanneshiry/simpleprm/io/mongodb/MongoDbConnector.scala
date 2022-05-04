@@ -47,6 +47,8 @@ final case class MongoDbConnector(
     with BSONReader
     with LazyLogging {
 
+  import BsonEncoder.*
+
   private val driver: AsyncDriver = new reactivemongo.api.AsyncDriver
   private val connection: Future[MongoConnection] = driver.connect(
     nodes = nodes,
@@ -92,7 +94,7 @@ final case class MongoDbConnector(
     contactsCollection.flatMap(findStayInTouch(_))
 
   def getReminder(contactUid: Uid): Future[Option[Reminder]] =
-    contactsCollection.flatMap(findStayInTouch(_, contactUid))
+    contactsCollection.flatMap(findReminder(_, contactUid))
 
   def delReminder(reminderUuid: UUID): Future[Try[Unit]] = ???
 
@@ -126,8 +128,7 @@ final case class MongoDbConnector(
     val updateBuilder = collection.update(ordered = true)
 
     // only the vCard needs to be updated
-    val modifierFunc = (vCard: MongoDbVCard) =>
-      set(BsonEncoder.encode(vCard, Some("vCard")))
+    val modifierFunc = (vCard: MongoDbVCard) => set(vCard.asBson("vCard"))
 
     // q = selector, u = modifier
     val updates = Future.sequence(
@@ -170,14 +171,10 @@ final case class MongoDbConnector(
       upsert: Boolean
   ): Future[WriteResult] = {
 
-    val selector = BsonEncoder.encode(reminder.contactId, Some("_id"))
+    val selector = reminder.contactId.asBson("_id")
 
     // only the reminder field needs to be updated
-    // due to BSON Transformer limitations, we need to ensure that we have a case class here
-    val modifier = reminder match {
-      case r: StayInTouch => set(BsonEncoder.encode(r, Some("reminder")))
-      case r: Birthday    => set(BsonEncoder.encode(r, Some("reminder")))
-    }
+    val modifier = set(reminder.asBson("reminder"))
 
     // do not set upsert to true, as otherwise a stay in touch element is created as document!
     // the executed operation however is still an upsert within a contact if the contact exists!
@@ -206,13 +203,12 @@ final case class MongoDbConnector(
       .map(_.flatMap(_.reminder))
   }
 
-  private def findStayInTouch(
+  private def findReminder(
       collection: BSONCollection,
       contactUid: Uid
   ): Future[Option[Reminder]] = {
     // query reminder by contact uid
-    val query =
-      BsonEncoder.encode(contactUid, Some("reminder.contactId"))
+    val query = contactUid.asBson("reminder.contactId")
     collection.find(query).one[MongoDbContact].map(_.flatMap(_.reminder))
   }
 
