@@ -131,7 +131,7 @@ trait Encoder[A] {
     def f(x: Option[T], fieldName: Option[String] = None): A =
       optionHandler(x, fieldName)
 
-  /** Turns a case class into an BSONDocument
+  /** Turns a case class into an instance of A
     *
     * Fucking voodoo from
     * https://kavedaa.github.io/auto-ui-generation/auto-ui-generation.html
