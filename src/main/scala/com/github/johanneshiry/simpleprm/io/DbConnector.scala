@@ -23,15 +23,15 @@ trait DbConnector {
 
   def getAllContacts: Future[Vector[Contact]]
 
-  def upsertContacts(contacts: Seq[Contact]): Future[Unit]
+  def updateContacts(contacts: Seq[Contact], upsert: Boolean): Future[Unit]
 
   def delContacts(contacts: Seq[Contact]): Future[Unit]
 
-  def upsertReminder(stayInTouch: Reminder): Future[Reminder]
+  def updateReminder(reminder: Reminder, upsert: Boolean): Future[Reminder]
 
   def getAllReminders: Future[Vector[Reminder]]
 
-  def getStayInTouch(
+  def getReminder(
       contactUid: Uid
   ): Future[Option[Reminder]] // todo may be multiples -> switch to vector
 

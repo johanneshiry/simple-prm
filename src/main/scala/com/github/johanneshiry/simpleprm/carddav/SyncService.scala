@@ -150,7 +150,7 @@ object SyncService extends LazyLogging {
         ctx.pipeToSelf(
           Future.sequence(
             Seq(
-              stateData.connector.upsertContacts(serverContacts),
+              stateData.connector.updateContacts(serverContacts, true),
               stateData.connector.delContacts(toBeDeletedContacts)
             )
           )

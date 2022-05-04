@@ -63,9 +63,9 @@ final case class MongoDbConnector(
   def getAllContacts: Future[Vector[Contact]] =
     contactsCollection.flatMap(findContacts(_))
 
-  def upsertContacts(contacts: Seq[Contact]): Future[Unit] = {
+  def updateContacts(contacts: Seq[Contact], upsert: Boolean): Future[Unit] = {
     val handleMe = contactsCollection.flatMap(
-      upsertContacts(contacts, _)
+      updateContacts(contacts, _, upsert)
     ) // todo process errors
     handleMe.map(_ => {}) // todo adapt handling
   }
@@ -77,9 +77,9 @@ final case class MongoDbConnector(
     handleMe.map(_ => {}) // todo adapt handling
   }
 
-  def upsertReminder(reminder: Reminder): Future[Reminder] = {
+  def updateReminder(reminder: Reminder, upsert: Boolean): Future[Reminder] = {
     val handleMe = contactsCollection.flatMap(
-      upsertReminder(reminder, _)
+      updateReminder(reminder, _, upsert)
     )
     handleMe.map(writeResult => {
       logger.debug(s"Upsert StayInTouch result: $writeResult")
@@ -91,7 +91,7 @@ final case class MongoDbConnector(
   def getAllReminders: Future[Vector[Reminder]] =
     contactsCollection.flatMap(findStayInTouch(_))
 
-  def getStayInTouch(contactUid: Uid): Future[Option[Reminder]] =
+  def getReminder(contactUid: Uid): Future[Option[Reminder]] =
     contactsCollection.flatMap(findStayInTouch(_, contactUid))
 
   def delReminder(reminderUuid: UUID): Future[Try[Unit]] = ???
@@ -117,9 +117,10 @@ final case class MongoDbConnector(
     deletes.flatMap(deleteBuilder.many(_))
   }
 
-  private def upsertContacts(
+  private def updateContacts(
       contacts: Seq[Contact],
-      collection: BSONCollection
+      collection: BSONCollection,
+      upsert: Boolean
   ): Future[collection.MultiBulkWriteResult] = {
 
     val updateBuilder = collection.update(ordered = true)
@@ -134,7 +135,7 @@ final case class MongoDbConnector(
         updateBuilder.element(
           q = contactByUidSelector(contact),
           u = modifierFunc(MongoDbVCard(contact)),
-          upsert = true
+          upsert = upsert
         )
       )
     )
@@ -163,9 +164,10 @@ final case class MongoDbConnector(
       .map(_.map(mongoDbContact => Contact(mongoDbContact.vCard.value)))
   }
 
-  private def upsertReminder(
+  private def updateReminder(
       reminder: Reminder,
-      collection: BSONCollection
+      collection: BSONCollection,
+      upsert: Boolean
   ): Future[WriteResult] = {
 
     val selector = BsonEncoder.encode(reminder.contactId, Some("_id"))
@@ -177,11 +179,9 @@ final case class MongoDbConnector(
       case r: Birthday    => set(BsonEncoder.encode(r, Some("reminder")))
     }
 
-    println(pretty(modifier))
-
     // do not set upsert to true, as otherwise a stay in touch element is created as document!
     // the executed operation however is still an upsert within a contact if the contact exists!
-    collection.update.one(selector, modifier, upsert = false)
+    collection.update.one(selector, modifier, upsert = upsert)
 
   }
 

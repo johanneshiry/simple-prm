@@ -95,11 +95,11 @@ object ReminderApi extends FailFastCirceSupport with MarshalSupport {
       def createReminder(
           reminder: Reminder
       ): Future[CreateReminderResponse] = dbConnector
-        .upsertReminder(reminder)
+        .updateReminder(reminder, false)
         .map(CreateStayInTouchResponseOK.apply) // todo return error on failure
 
       def getReminder(contactUid: Uid): Future[GetReminderResponse] =
-        dbConnector.getStayInTouch(contactUid).map {
+        dbConnector.getReminder(contactUid).map {
           case Some(reminder) =>
             GetRemindersResponseOK(Vector(reminder))
           case None =>

@@ -276,7 +276,7 @@ object EmailNotifierService extends EmailNotifierService {
             .sequence(
               stayInTouches
                 .map(_.lastContactedToNow)
-                .map(stateData.config.dbConnector.upsertReminder)
+                .map(stateData.config.dbConnector.updateReminder(_, false))
             )
             .map(stayInTouchData => (eMailStrings, stayInTouchData))
         )
