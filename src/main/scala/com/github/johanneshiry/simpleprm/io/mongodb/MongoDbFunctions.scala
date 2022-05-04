@@ -24,9 +24,25 @@ private[mongodb] object MongoDbFunctions {
   val set: BSONDocument => BSONDocument = (doc: BSONDocument) =>
     BSONDocument("$set" -> doc)
 
+  // { $push: { <field1>: <value1>, ... } }
+  // https://www.mongodb.com/docs/manual/reference/operator/update/push/
+  val push: BSONDocument => BSONDocument = (doc: BSONDocument) =>
+    BSONDocument("$push" -> doc)
+
+  val pull: BSONDocument => BSONDocument = (doc: BSONDocument) =>
+    BSONDocument("$pull" -> doc)
+
+  // { $addToSet: { <field1>: <value1>, ... } }
+  val addToSet: BSONDocument => BSONDocument = (doc: BSONDocument) =>
+    BSONDocument("$addToSet" -> doc)
+
   // { "fieldName" : { $ne: null } }
   val notNull: String => BSONDocument = (fieldName: String) =>
-    BSONDocument(fieldName -> BSONDocument("$ne" -> "null"))
+    not(fieldName, "null")
+
+  val not: (String, String) => BSONDocument =
+    (fieldName: String, notValue: String) =>
+      BSONDocument(fieldName -> BSONDocument("$ne" -> notValue))
 
   val sortBy: Option[SortBy] => BSONDocument =
     (maybeSortBy: Option[SortBy]) =>
