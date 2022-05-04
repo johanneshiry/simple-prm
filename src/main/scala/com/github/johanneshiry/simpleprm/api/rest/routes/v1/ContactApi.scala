@@ -35,6 +35,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
+import com.github.johanneshiry.simpleprm.api.rest.json.JsonEncoder.*
+
 object ContactApi extends FailFastCirceSupport with MarshalSupport {
 
   // handler interface containing all methods supported by the api
@@ -70,10 +72,6 @@ object ContactApi extends FailFastCirceSupport with MarshalSupport {
   ) extends GetContactsPaginatedResponse(StatusCodes.OK)
 
   object GetContactsPaginatedResponse extends LazyLogging {
-
-    import io.circe.generic.auto._
-    import io.circe.syntax._
-    import scala.language.postfixOps
 
     sealed case class PaginatedContacts(contacts: Vector[Contact])
 

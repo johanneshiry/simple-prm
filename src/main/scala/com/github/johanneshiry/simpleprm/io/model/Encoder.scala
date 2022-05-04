@@ -11,7 +11,6 @@ import com.github.johanneshiry.simpleprm.io.model.Reminder.{
 }
 import ezvcard.property.Uid
 import ezvcard.{Ezvcard, VCard}
-import io.circe.{Encoder, Json, JsonNumber, JsonObject}
 import reactivemongo.api.bson.BSONValue.pretty
 import reactivemongo.api.bson.{
   BSONDocument,

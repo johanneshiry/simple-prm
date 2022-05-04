@@ -16,6 +16,8 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
+import com.github.johanneshiry.simpleprm.api.rest.json.JsonEncoder.*
+
 private[rest] abstract class RestApi(version: String)(implicit
     actorSystem: ActorSystem[Nothing],
     ec: ExecutionContext
@@ -36,8 +38,6 @@ private[rest] abstract class RestApi(version: String)(implicit
   val rejectionHandler: RejectionHandler =
     RejectionHandler.default.mapRejectionResponse {
       case res @ HttpResponse(_, _, ent: HttpEntity.Strict, _) =>
-        import io.circe.generic.auto._, io.circe.syntax._
-
         val statusCode = res.status.intValue()
         val msg =
           ent.data.utf8String.replaceAll("\"", """\"""")

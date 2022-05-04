@@ -45,9 +45,9 @@ import com.github.johanneshiry.simpleprm.io.model.JSONCodecs.*
 import java.util.UUID
 import scala.util.{Failure, Success}
 
-object ReminderApi extends FailFastCirceSupport with MarshalSupport {
+import com.github.johanneshiry.simpleprm.api.rest.json.JsonEncoder.*
 
-  import io.circe.generic.auto._
+object ReminderApi extends FailFastCirceSupport with MarshalSupport {
 
   // routes
   implicit val decReminder: Decoder[Reminder] =
@@ -129,9 +129,6 @@ object ReminderApi extends FailFastCirceSupport with MarshalSupport {
       implicit ec => resp => createResponseTR(resp)
     }
 
-    import io.circe.syntax._
-    import scala.language.postfixOps
-
     implicit def createStayInTouchMarshaller
         : Marshaller[Reminder, ResponseEntity] =
       Marshaller.strict(reminder =>
@@ -163,14 +160,11 @@ object ReminderApi extends FailFastCirceSupport with MarshalSupport {
       implicit ec => resp => createResponseTR(resp)
     }
 
-    import io.circe.syntax._
-    import scala.language.postfixOps
-
     implicit def getRemindersMarshaller
         : Marshaller[Vector[Reminder], ResponseEntity] =
-      Marshaller.strict(reminder =>
+      Marshaller.strict(reminders =>
         Marshalling.Opaque { () =>
-          reminder.asJson(JSONCodecs.encReminders).toString
+          reminders.asJson.toString
         }
       )
 
@@ -200,7 +194,6 @@ object ReminderApi extends FailFastCirceSupport with MarshalSupport {
       implicit ec => resp => createResponseTR(resp)
     }
 
-    import io.circe.syntax._
     import scala.language.postfixOps
 
     implicit def delRemindersMarshaller: Marshaller[Throwable, ResponseEntity] =

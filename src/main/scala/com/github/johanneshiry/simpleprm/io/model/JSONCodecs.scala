@@ -30,9 +30,6 @@ object JSONCodecs {
 
   // todo remove
 
-  // ezvcard.property.Uid
-  implicit val encUid: Encoder[Uid] =
-    (a: Uid) => Json.fromString(a.getValue)
 
   implicit def decUid(fieldName: String): Decoder[Uid] =
     Decoder.decodeString.emapTry {
@@ -40,19 +37,11 @@ object JSONCodecs {
         Try(new Uid(uidString))
     }
 
-  // ezvcard.VCard
-  implicit val encVCard: Encoder[VCard] =
-    (x: VCard) =>
-      Json.fromString(Ezvcard.write(x).prodId(false).version(x.getVersion).go())
-
   implicit def decVCard(fieldName: String): Decoder[VCard] =
     Decoder.decodeString.emapTry(vCardString =>
       Try(Ezvcard.parse(vCardString).first())
     )
 
-  // throwable
-  implicit val encThrowable: Encoder[Throwable] =
-    (x: Throwable) => Json.fromString(x.toString)
 
   // Reminder trait
   // workaround due to currently not supported trait handling in circe for scala 3
@@ -82,28 +71,6 @@ object JSONCodecs {
                 case ReminderType.Birthday =>
                   decBirthday(decUid)(cursor).leftMap[String](er => er.toString)
     })
-
-  implicit def encReminder: Encoder[Reminder] =
-    (reminder: Reminder) =>
-      Json.obj(
-        ("uuid", Json.fromString(reminder.uuid.toString)),
-        ("reason", Json.fromString(reminder.reason.getOrElse(""))),
-        ("contactId", Json.fromString(reminder.contactId.getValue)),
-        ("reminderDate", Json.fromString(reminder.reminderDate.toString)),
-        (
-          "lastTimeReminded",
-          Json.fromString(reminder.lastTimeReminded.toString)
-        ),
-        (
-          "reminderInterval",
-          Json.fromString(reminder.reminderInterval.toString)
-        ),
-        ("reminderType", Json.fromString(reminder.reminderType.id))
-      )
-
-  implicit def encReminders: Encoder[Vector[Reminder]] =
-    (reminders: Vector[Reminder]) =>
-      Json.fromValues(reminders.map(_.asJson(encReminder)))
 
   implicit def decStayInTouch(implicit
       decUid: Decoder[Uid]
