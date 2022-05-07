@@ -97,8 +97,11 @@ final case class MongoDbConnector(
   def getReminder(contactUid: Uid): Future[Seq[Reminder]] =
     contactsCollection.flatMap(findReminders(_, contactUid))
 
+  // todo process errors correctly
   def delReminder(reminderUuid: UUID): Future[Try[Unit]] =
-    contactsCollection.flatMap(removeReminder(_, reminderUuid))
+    contactsCollection.flatMap(
+      removeReminder(_, reminderUuid).map(_ => Success({}))
+    )
 
   private def contactsCollection: Future[BSONCollection] =
     dbConnection.map(_.collection("contacts"))

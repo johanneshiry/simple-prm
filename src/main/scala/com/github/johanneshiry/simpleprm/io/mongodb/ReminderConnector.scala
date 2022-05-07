@@ -99,6 +99,13 @@ private[mongodb] trait ReminderConnector extends BsonDecoder with LazyLogging {
   protected def removeReminder(
       collection: BSONCollection,
       reminderUuid: UUID
-  ) = ???
+  )(implicit ec: ExecutionContext): Future[WriteResult] = {
+    val selector = reminderUuid.asBson("reminders.uuid")
+    val modifier = pull(
+      BSONDocument("reminders" -> reminderUuid.asBson("uuid"))
+    )
+
+    collection.update.one(selector, modifier)
+  }
 
 }
