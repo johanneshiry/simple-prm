@@ -61,7 +61,7 @@ dependencies {
   implementation 'io.circe:circe-parser_3:0.15.0-M1'
 
   // logging
-  implementation "com.typesafe.scala-logging:scala-logging_${scalaMajorVersion}:3.9.4"
+  implementation "com.typesafe.scala-logging:scala-logging_${scalaMajorVersion}:3.9.5"
   implementation 'ch.qos.logback:logback-classic:1.2.11'
 
   // config
