@@ -15,6 +15,8 @@ import scala.util.{Failure, Success, Try}
 
 object ArgsParser extends LazyLogging {
 
+  private val defaultConfigName: String = "simple-prm.conf"
+
   // case class for allowed arguments
   final case class Arguments(
       mainArgs: Array[String],
@@ -32,6 +34,16 @@ object ArgsParser extends LazyLogging {
             configLocation = Option(value)
           )
         )
+        .withFallback({
+          val defaultCfgPath = new java.io.File(
+            "."
+          ).getCanonicalPath + java.io.File.separator + defaultConfigName
+          logger.warn(
+            s"No config provided. Trying the default one @ '$defaultCfgPath'. " +
+              s"Please consider providing the config file using --config!"
+          )
+          () => defaultCfgPath
+        })
         .validate(value =>
           if (value.trim.isEmpty) failure("config location cannot be empty")
           else success
