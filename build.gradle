@@ -79,7 +79,7 @@ dependencies {
     exclude group: 'org.slf4j'
     exclude group: 'com.typesafe.akka' // uses akka scala 3 otherwise
   }
-  implementation 'io.netty:netty-all:4.1.75.Final'
+  implementation 'io.netty:netty-all:4.1.77.Final'
   // required by mongo db driver // todo replace by specific required dependencies
 
   //  implementation 'io.netty:netty-common:4.1.75.Final' // required by mongo db driver
