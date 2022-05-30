@@ -34,7 +34,7 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
 
       - name: build and test with gradle
-        run: ./gradlew clean build test jacocoTestReport
+        run: ./gradlew clean build test
 
       - name: sonarcloud scan
         env:
