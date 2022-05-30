@@ -58,7 +58,7 @@ dependencies {
   }
 
   // json parsing with circe
-  implementation 'de.heikoseeberger:akka-http-circe_2.13:1.40.0-RC1'
+  implementation 'de.heikoseeberger:akka-http-circe_2.13:1.40.0-RC2'
   implementation 'io.circe:circe-core_3:0.15.0-M1'
   implementation 'io.circe:circe-generic_3:0.15.0-M1'
   implementation 'io.circe:circe-parser_3:0.15.0-M1'
