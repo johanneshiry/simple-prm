@@ -34,7 +34,7 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
 
       - name: build and test with gradle
-        run: ./gradlew clean build test scalatest
+        run: ./gradlew clean build scalatest jacocoTestReport
 
       - name: sonarcloud scan
         env:
@@ -44,6 +44,8 @@ jobs:
 
       - name: check SonarQube Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@master
+        with:
+          scanMetadataReportFile: build/sonar/report-task.txt
         # Force to fail step after specific time
         timeout-minutes: 5
         env:
