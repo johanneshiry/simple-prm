@@ -84,7 +84,7 @@ private[mongodb] object BsonEncoder extends Encoder[BSONValue] {
           transformer.f(elem, Some(fieldName))
       }
 
-    maybeBsonDoc(transformed.reduce(deepMerge), fieldName)
+    maybeBsonDoc(transformed.reverse.reduce(deepMerge), fieldName)
 
   }
 
