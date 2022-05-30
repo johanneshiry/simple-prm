@@ -1,0 +1,22 @@
+test {
+  useJUnitPlatform()
+  testLogging {
+    events "skipped", "failed"
+  }
+  finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+scalatest {
+  finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+// test task performance improvements, see -> https://docs.gradle.org/current/userguide/performance.html
+tasks.withType(Test).configureEach {
+  maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+  forkEvery = 100
+}
+
+tasks.withType(ScalaCompile).configureEach {
+  options.fork = true
+  options.incremental = true
+}
