@@ -88,13 +88,22 @@ private[mongodb] object BsonDecoder {
     import io.circe.parser.*
     import BsonDecoder.*
 
-    private def undefinedToEmpty(bson: BSONValue) = {
+    private def undefinedToNullString(bson: BSONValue): BSONValue = {
       bson match
         case document: BSONDocument =>
           val elems = document.elements.map(element =>
             element.value match
-              case _: BSONUndefined => BSONElement(element.name, BSONString(""))
-              case _                => element
+              case arr: BSONArray =>
+                BSONElement(
+                  element.name,
+                  BSONArray(arr.values.map(undefinedToNullString))
+                )
+              case doc: BSONDocument =>
+                BSONElement(element.name, undefinedToNullString(doc))
+              case _: BSONUndefined =>
+                BSONElement(element.name, BSONString("null"))
+              case _ =>
+                element
           )
           BSONDocument.newBuilder.addAll(elems).result()
         case nonDocument =>
@@ -103,7 +112,7 @@ private[mongodb] object BsonDecoder {
 
     private def clean(bson: BSONValue) =
       pretty(
-        undefinedToEmpty(bson)
+        undefinedToNullString(bson)
       ).doubleQuotes.noCarriageReturn.noNewLine.trim
 
     final def asJson: Either[ParsingFailure, Json] = parse(clean(bsonVal))
