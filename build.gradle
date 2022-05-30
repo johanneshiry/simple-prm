@@ -13,7 +13,7 @@ ext {
 
   scalaMajorVersion = '3'
   scalaVersion = '3.1.2'
-  akkaVersion = '2.6.18'
+  akkaVersion = '2.6.19'
 
   tscfgVersion = '0.9.997'
 
