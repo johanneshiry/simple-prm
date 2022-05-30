@@ -23,7 +23,7 @@ RUN apk add --no-cache --virtual=.build-dependencies wget ca-certificates \
 
 WORKDIR $WORKDIR
 
-COPY .. $WORKDIR
+COPY . $WORKDIR
 
 # build shadow jar
 RUN ./gradlew --refresh-dependencies clean shadowJar
