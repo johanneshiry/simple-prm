@@ -34,6 +34,9 @@ apply from: scriptsLocation + 'tscfg.gradle' // config tasks
 
 repositories {
   mavenCentral()
+
+  // sonatype snapshot repo
+  maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }
 }
 
 dependencies {
@@ -75,15 +78,14 @@ dependencies {
   implementation 'com.googlecode.ez-vcard:ez-vcard:0.11.3'
 
   // mongo db driver
-  implementation('org.reactivemongo:reactivemongo_3:1.1.0-noshaded-RC3') {
+  implementation('org.reactivemongo:reactivemongo_3:1.1.0-RC4') {
     exclude group: 'org.slf4j'
     exclude group: 'com.typesafe.akka' // uses akka scala 3 otherwise
   }
-  implementation 'io.netty:netty-all:4.1.75.Final'
-  // required by mongo db driver // todo replace by specific required dependencies
 
-  //  implementation 'io.netty:netty-common:4.1.75.Final' // required by mongo db driver
-  //  implementation 'io.netty:netty-transport:4.1.75.Final'
+  implementation('io.github.johanneshiry:linkedin-scraper:0.1-SNAPSHOT')
+  implementation('io.github.bonigarcia:webdrivermanager:5.1.1')
+  implementation('org.seleniumhq.selenium:selenium-java:4.1.4')
 
   // send e-mails
   implementation "com.github.eikek:emil-common_$scalaMajorVersion:0.12.0"
