@@ -88,7 +88,7 @@ dependencies {
   }
 
   implementation('io.github.johanneshiry:linkedin-scraper:0.1-SNAPSHOT')
-  implementation('io.github.bonigarcia:webdrivermanager:5.1.1')
+  implementation('io.github.bonigarcia:webdrivermanager:5.2.1')
   implementation('org.seleniumhq.selenium:selenium-java:4.1.4')
 
   // send e-mails
