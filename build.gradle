@@ -89,7 +89,7 @@ dependencies {
 
   implementation('io.github.johanneshiry:linkedin-scraper:0.1-SNAPSHOT')
   implementation('io.github.bonigarcia:webdrivermanager:5.1.1')
-  implementation('org.seleniumhq.selenium:selenium-java:4.1.4')
+  implementation('org.seleniumhq.selenium:selenium-java:4.7.1')
 
   // send e-mails
   implementation "com.github.eikek:emil-common_$scalaMajorVersion:0.12.0"
