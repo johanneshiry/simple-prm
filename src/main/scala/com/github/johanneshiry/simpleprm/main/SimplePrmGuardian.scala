@@ -48,39 +48,39 @@ object SimplePrmGuardian extends LazyLogging {
         "DavServerService"
       )
 
-      // db connector
-      val connector: DbConnector =
-        MongoDbConnector(cfg.simple_prm.database)(ctx.executionContext)
-
-      // card dav sync service
-      val syncService = ctx.spawn(
-        SyncService(
-          cfg.simple_prm.carddav.syncInterval,
-          cardDavService,
-          connector
-        ),
-        "SyncService"
-      )
-
+//      // db connector
+//      val connector: DbConnector =
+//        MongoDbConnector(cfg.simple_prm.database)(ctx.executionContext)
+//
+//      // card dav sync service
+//      val syncService = ctx.spawn(
+//        SyncService(
+//          cfg.simple_prm.carddav.syncInterval,
+//          cardDavService,
+//          connector
+//        ),
+//        "SyncService"
+//      )
+//
       // email notifier
       val notifierService = ctx.spawn(
         EmailNotifierService(
           EmailNotifierConfig(
             cfg.simple_prm.emailServer,
             cfg.simple_prm.notifier,
-            connector
+            cardDavService
           ),
           EmailComposer(cfg.simple_prm.notifier.email)
         ),
         "EmailNotifierService"
       )
 
-      /// http server + rest api
-      RestApiV1(
-        Http().newServerAt(cfg.simple_prm.rest.host, cfg.simple_prm.rest.port),
-        ContactHandler(connector),
-        ReminderHandler.StayInTouchHandler(connector)
-      )
+//      /// http server + rest api
+//      RestApiV1(
+//        Http().newServerAt(cfg.simple_prm.rest.host, cfg.simple_prm.rest.port),
+//        ContactHandler(connector),
+//        ReminderHandler.StayInTouchHandler(connector)
+//      )
 
       logger.info("Startup complete!")
       idle()
