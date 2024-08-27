@@ -2,7 +2,7 @@ sonarqube {
   properties {
     // general stuff
     property 'sonar.projectName', 'simple-prm' // project name
-    property 'sonar.projectKey', 'johanneshiry:simple-prm'
+    property 'sonar.projectKey', 'johanneshiry_simple-prm'
     property 'sonar.organization', 'johanneshiry'
     property 'sonar.host.url', 'https://sonarcloud.io'
     property 'sonar.verbose', 'true' // verbose mode
