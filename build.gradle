@@ -7,7 +7,7 @@ plugins {
   id "de.undercouch.download" version "5.1.0" // downloads plugin
   id "com.github.johnrengelman.shadow" version "7.1.2" // fat jar
   id "com.github.maiflai.scalatest" version "0.32"
-  id "org.sonarqube" version "4.4.1.3373" // sonarqube
+  id "org.sonarqube" version "5.1.0.4882" // sonarqube
 }
 
 ext {
