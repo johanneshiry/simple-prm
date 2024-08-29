@@ -82,7 +82,7 @@ dependencies {
   implementation 'com.googlecode.ez-vcard:ez-vcard:0.11.3'
 
   // mongo db driver
-  implementation('org.reactivemongo:reactivemongo_3:1.1.0-RC4') {
+  implementation('org.reactivemongo:reactivemongo_3:1.1.0.noshaded-RC12') {
     exclude group: 'org.slf4j'
     exclude group: 'com.typesafe.akka' // uses akka scala 3 otherwise
   }
