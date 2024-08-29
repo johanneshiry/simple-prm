@@ -99,7 +99,6 @@ dependencies {
   testImplementation "org.scalatest:scalatest_$scalaMajorVersion:3.2.12"
   testRuntimeOnly 'com.vladsch.flexmark:flexmark-all:0.64.8' //scalatest html output
   testImplementation 'org.pegdown:pegdown:1.6.0'
-
 }
 
 tasks.withType(JavaCompile).configureEach {
