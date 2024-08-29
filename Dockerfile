@@ -1,8 +1,8 @@
-FROM eclipse-temurin:17-jre-alpine as builder
+FROM gradle:8.10-jdk17-alpine as builder
 
 # Set arguments with defaults
 ARG SCALA_VERSION=3.1.1
-ARG WORKDIR=/app
+ARG WORKDIR=/app^
 
 # Map arguments to environment
 ENV SCALA_HOME="/usr/local/scala"
@@ -26,7 +26,7 @@ WORKDIR $WORKDIR
 COPY . $WORKDIR
 
 # build shadow jar
-RUN ./gradlew --refresh-dependencies clean shadowJar
+RUN gradle --refresh-dependencies --stacktrace clean shadowJar
 
 # start over from a clean JRE image
 FROM eclipse-temurin:17-jre-alpine as runner
