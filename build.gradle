@@ -75,7 +75,7 @@ dependencies {
   implementation "com.github.scopt:scopt_${scalaMajorVersion}:4.0.1" // cmd args parser
 
   // webdav client library
-  implementation 'com.github.lookfirst:sardine:5.10'
+  implementation 'com.github.lookfirst:sardine:5.12'
   // todo exclude vulnerable dependencies -> https://mvnrepository.com/artifact/com.github.lookfirst/sardine/5.10
 
   // card dav parser
