@@ -26,7 +26,7 @@ WORKDIR $WORKDIR
 COPY . $WORKDIR
 
 # build shadow jar
-RUN gradle --refresh-dependencies clean shadowJar
+RUN ./gradlew --refresh-dependencies clean shadowJar
 
 # start over from a clean JRE image
 FROM eclipse-temurin:17-jre-alpine as runner
