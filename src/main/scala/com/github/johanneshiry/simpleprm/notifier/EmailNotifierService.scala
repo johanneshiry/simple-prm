@@ -164,7 +164,8 @@ object EmailNotifierService extends EmailNotifierService {
   final case class EmailNotifierConfig(
       mailConfig: MailConfig,
       runHour: FiniteDuration,
-      dbConnector: DbConnector
+      dbConnector: DbConnector,
+      globalBirthdayEnabled: Boolean
   )
 
   object EmailNotifierConfig {
@@ -177,7 +178,8 @@ object EmailNotifierService extends EmailNotifierService {
       new EmailNotifierConfig(
         MailConfig(emailCfg),
         FiniteDuration(notifierCfg.scheduleHour.toHours, TimeUnit.HOURS),
-        dbConnector
+        dbConnector,
+        notifierCfg.globalBirthdayEnabled
       )
 
   }
@@ -235,7 +237,6 @@ object EmailNotifierService extends EmailNotifierService {
       emailComposer: EmailComposer
   ): Behavior[EmailNotifierServiceCmd] =
     Behaviors.withTimers { timers =>
-
       // setup timers
       timers.startTimerWithFixedDelay(
         Run,

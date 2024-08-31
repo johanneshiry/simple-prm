@@ -1,11 +1,11 @@
 ////////////////////////////////////////////////////////////////////////////
 // Generate config classes reflecting the application.conf template file
 ////////////////////////////////////////////////////////////////////////////
-task genConfigClass {
+tasks.register('genConfigClass') {
   doLast {
     def tscfgJarFile = project.file('build/tscfg-' + tscfgVersion + '.jar')
     if (!tscfgJarFile.exists() || !tscfgJarFile.isFile()) {
-      download {
+      download.run {
         src 'https://github.com/carueda/tscfg/releases/download/v' + tscfgVersion + '/tscfg-' + tscfgVersion + '.jar'
         dest buildDir
       }

@@ -1,5 +1,5 @@
 /*
- * © 2022. Johannes Hiry
+ * © 2024. Johannes Hiry
  */
 
 package com.github.johanneshiry.simpleprm.cfg
@@ -259,6 +259,7 @@ object SimplePrmCfg {
 
     final case class Notifier(
         email: SimplePrmCfg.SimplePrm.Notifier.Email,
+        globalBirthdayEnabled: scala.Boolean,
         scheduleHour: java.time.Duration
     )
     object Notifier {
@@ -307,11 +308,29 @@ object SimplePrmCfg {
             parentPath + "email.",
             $tsCfgValidator
           ),
+          globalBirthdayEnabled =
+            $_reqBln(parentPath, c, "globalBirthdayEnabled", $tsCfgValidator),
           scheduleHour =
             if (c.hasPathOrNull("scheduleHour")) c.getDuration("scheduleHour")
             else java.time.Duration.parse("PT0.009S")
         )
       }
+      private def $_reqBln(
+          parentPath: java.lang.String,
+          c: com.typesafe.config.Config,
+          path: java.lang.String,
+          $tsCfgValidator: $TsCfgValidator
+      ): scala.Boolean = {
+        if (c == null) false
+        else
+          try c.getBoolean(path)
+          catch {
+            case e: com.typesafe.config.ConfigException =>
+              $tsCfgValidator.addBadPath(parentPath + path, e)
+              false
+          }
+      }
+
     }
 
     final case class Rest(
