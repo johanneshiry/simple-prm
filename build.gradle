@@ -72,7 +72,7 @@ dependencies {
   implementation 'ch.qos.logback:logback-classic:1.2.11'
 
   // config
-  implementation "com.github.scopt:scopt_${scalaMajorVersion}:4.0.1" // cmd args parser
+  implementation "com.github.scopt:scopt_${scalaMajorVersion}:4.1.0" // cmd args parser
 
   // webdav client library
   implementation 'com.github.lookfirst:sardine:5.10'
